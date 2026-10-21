@@ -1,9 +1,11 @@
 """Terminal I/O, ANSI colors and text helpers."""
 
+import fcntl
 import os
 import re
 import select
 import shutil
+import struct
 import sys
 import termios
 import tty
@@ -98,6 +100,17 @@ class Terminal:
     def size(self):
         s = shutil.get_terminal_size((80, 24))
         return s.columns, s.lines
+
+    def pixel_aspect(self):
+        """Width / height of one half-block pixel on screen (1.0 if unknown)."""
+        try:
+            rows, cols, xpx, ypx = struct.unpack("HHHH", fcntl.ioctl(
+                sys.stdout.fileno(), termios.TIOCGWINSZ, b"\0" * 8))
+            if rows and cols and xpx and ypx:
+                return max(0.5, min(2.0, (xpx / cols) / (ypx / rows / 2)))
+        except OSError:
+            pass
+        return 1.0
 
     def read_key(self, timeout):
         r, _, _ = select.select([self.fd], [], [], timeout)

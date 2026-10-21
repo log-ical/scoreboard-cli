@@ -20,6 +20,8 @@ from ..net import fetch_json, fetch_json_timed
 SITE = "https://site.api.espn.com/apis/site/v2/sports/{sport}/{league}/scoreboard"
 CORE = "https://sports.core.api.espn.com/v2/sports/{sport}/leagues/{league}/events/{id}/competitions/{id}"
 LOGO = "https://a.espncdn.com/combiner/i?img={path}&h=200&w=200"
+PLAY_HISTORY = 25      # plays fetched for the expanded play list
+PLAY_REFRESH = 20      # seconds between refetches of that list while it's open
 
 
 def _hex(s):
@@ -222,6 +224,35 @@ class Poller:
         self.play_ref, self.play = None, None
         self.status_val, self.status_seen = None, 0.0
         self.play_status_val = None
+        self.want_plays = False     # set by the game view while the play list is open
+        self.plays = {}             # seq -> text
+        self.plays_fetched, self.plays_ref = 0.0, False
+
+    def play_entry(self, play):
+        """(seq, "Q4  6:36  text") for the expanded play list."""
+        try:
+            seq = int(play.get("sequenceNumber"))
+        except (TypeError, ValueError):
+            return None
+        period = (play.get("period") or {}).get("number") or 1
+        clock = (play.get("clock") or {}).get("displayValue", "")
+        return seq, "%-3s %5s  %s" % (self.league.labels(period)[1], clock, play.get("text") or "")
+
+    def fetch_plays(self):
+        """The last PLAY_HISTORY plays (the API pages from the first play on)."""
+        url = self.core + "/plays?limit=%d&page=%%d" % PLAY_HISTORY
+        page = fetch_json(url % 1)
+        last = page.get("pageCount") or 1
+        items = []
+        if last > 1:
+            if last > 2:
+                items = fetch_json(url % (last - 1)).get("items", [])
+            page = fetch_json(url % last)
+        for p in items + page.get("items", []):
+            entry = self.play_entry(p)
+            if entry:
+                self.plays[entry[0]] = entry[1]
+        self.plays_fetched, self.plays_ref = time.time(), self.play_ref
 
     def poll(self):
         """Return (game, data_time, seconds_until_next_poll)."""
@@ -239,6 +270,18 @@ class Poller:
             self.play = fetch_json(ref)
             self.play_ref = ref
             self.play_status_val = None
+            entry = self.play_entry(self.play)
+            if entry:
+                self.plays[entry[0]] = entry[1]
+        # Polling only sees the latest play, so refetch the list now and then
+        # to fill in the plays between polls.
+        if self.want_plays and self.plays_ref != self.play_ref and now - self.plays_fetched > PLAY_REFRESH:
+            try:
+                self.fetch_plays()
+            except Exception:
+                self.plays_fetched = now   # retry after PLAY_REFRESH
+        for seq in sorted(self.plays)[:-2 * PLAY_HISTORY]:
+            del self.plays[seq]
 
         g = copy.deepcopy(self.base)
         g.away.stats, g.away.tags, g.home.stats, g.home.tags = [], [], [], []
@@ -270,4 +313,7 @@ class Poller:
                     g.clock_anchor = min(wall, data_t)
             g.clock_cap = L.clock_cap
         L.decorate(g, situation, play)
+        entry = self.play_entry(play) if play else None
+        g.play_seq = entry and entry[0]
+        g.plays = sorted(self.plays.items(), reverse=True)
         return g, data_t, L.poll_every

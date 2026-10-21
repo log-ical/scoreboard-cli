@@ -44,15 +44,16 @@ class LogoStore:
         self.images[url] = img
         return img
 
-    def grid(self, url, box_w, box_h):
-        """Logo scaled to fit inside box_w x box_h pixels, keeping its aspect."""
-        key = (url, box_w, box_h)
+    def grid(self, url, box_w, box_h, aspect=1.0):
+        """Logo scaled to fit inside box_w x box_h pixels, keeping its aspect
+        on screen, where each pixel is `aspect` times as wide as it is tall."""
+        key = (url, box_w, box_h, aspect)
         if key not in self.scaled:
             img = self._load(url)
             grid = None
             if img:
-                scale = min(box_w / img[0], box_h / img[1])
-                tw = max(1, round(img[0] * scale))
+                scale = min(box_w * aspect / img[0], box_h / img[1])
+                tw = max(1, round(img[0] * scale / aspect))
                 th = max(2, round(img[1] * scale))
                 grid = downscale(img, tw, th)
             self.scaled[key] = grid

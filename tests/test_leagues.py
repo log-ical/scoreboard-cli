@@ -15,6 +15,9 @@ class NhlTest(unittest.TestCase):
         self.assertIn("/teamlogos/nhl/500/", g.away.logo_url)
         self.assertTrue(g.away.stats[0].startswith("SOG "))
         self.assertTrue(g.last_play.startswith("Last goal: "))
+        texts = [t for _, t in g.plays]
+        self.assertTrue(any(" GOAL " in t for t in texts) and any(" PENALTY " in t for t in texts))
+        self.assertTrue(texts[0].startswith("OT ") and texts[-1].startswith("1st "))
 
     def test_espn_logo_names(self):
         self.assertIn("/sj.png", nhl._team({"abbrev": "SJS"}).logo_url)
@@ -124,6 +127,35 @@ class EspnTest(unittest.TestCase):
         self.assertTrue(self.nfl.stops_clock(ob, 100, 2))
         self.assertEqual(self.nfl.score_alert(6), "TOUCHDOWN!")
         self.assertIsNone(self.nba.score_alert(2))
+
+    def test_play_list_fetched_only_while_open(self):
+        def page(seqs, count):
+            return {"count": count, "pageCount": -(-count // espn.PLAY_HISTORY),
+                    "items": [{"sequenceNumber": str(n), "text": "play %d" % n,
+                               "period": {"number": 2}, "clock": {"displayValue": "5:00"}} for n in seqs]}
+        play = copy.deepcopy(fixture("nba_play.json"))
+        with FakeApi(fixture("nba_status.json"), dict(LAST_PLAY), play) as api:
+            urls = []
+            plain = api.fetch_json
+
+            def fetch(url, timeout=10):
+                urls.append(url)
+                if "/plays?" in url:
+                    n = int(url.rsplit("=", 1)[1])
+                    return page(range((n - 1) * 25 + 1, min(n * 25, 60) + 1), 60)
+                return plain(url)
+            espn.fetch_json = fetch
+            poller = self.nba.open(self.nba_game())
+            g, _, _ = poller.poll()
+            self.assertFalse(any("/plays?" in u for u in urls))
+            self.assertEqual([s for s, _ in g.plays], [int(play["sequenceNumber"])])
+            poller.want_plays = True
+            g, _, _ = poller.poll()
+        seqs = [s for s, _ in g.plays]
+        self.assertEqual(seqs[0], int(play["sequenceNumber"]))
+        self.assertIn(60, seqs)
+        self.assertIn(26, seqs)          # second-to-last page filled in too
+        self.assertEqual(dict(g.plays)[60], "Q2   5:00  play 60")
 
     def test_final_game(self):
         play = fixture("nfl_play_final.json")

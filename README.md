@@ -13,11 +13,19 @@ Live NHL, NBA and NFL scores in the terminal. Python 3 standard library only.
 | Screen    | Keys |
 |-----------|------|
 | Game list | `←/→` or `1/2/3` league · `↑/↓` move · `Enter` watch · `a` live/all · `o` options · `r` refresh · `q` quit |
-| Game view | `+`/`-` adjust delay · `o` options · `b`/`Esc` back · `q` quit |
+| Game view | `p` expand/collapse the play list (`↑/↓` scroll it) · `+`/`-` adjust delay · `o` options · `b`/`Esc` back · `q` quit |
 | Options   | `↑/↓` choose · `←/→` change · `o`/`Esc` close |
 
 The game view puts the away team on top and the home team on the bottom, each centered in its half,
-with the period and clock in the middle. A red ● on a league tab means it has live games.
+with the period and clock in the middle. With **Logo layout** set to horizontal, the teams sit side by
+side (away left, home right) with the clock between them; windows too narrow for that use the vertical layout.
+
+Press `p` to expand the last-play line into a scrollable list of earlier plays, newest first: every goal and
+penalty for the NHL, the last 25 or so plays for the NBA and NFL. ESPN plays are only downloaded while the list
+is open. With a stream delay, the list stops at the play the delayed view is on.
+
+Logos are fitted into a box that is square on screen, using the terminal's cell size in pixels when it
+reports one, so tall and wide logos come out the same size. A red ● on a league tab means it has live games.
 
 ## Options (saved to `~/.config/scoreboard/settings.json`)
 
@@ -27,7 +35,7 @@ with the period and clock in the middle. A red ● on a league tab means it has 
 - **Show last play**: NHL last goal and assists; NBA and NFL latest play.
 - **Show team stats**: NHL shots on goal; NBA timeouts and team fouls; NFL timeouts.
 - **Show game situation**: NHL power play and empty net; NBA bonus; NFL possession, red zone, down and distance.
-- **Logo size**, **Color mode**, **24-hour start times**
+- **Logo size**, **Logo layout** (vertical or horizontal), **Color mode**, **24-hour start times**
 
 ## Data and the clock
 

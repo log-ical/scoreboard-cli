@@ -135,9 +135,15 @@ def team_info(team, colors, tint, scale, flash, compact):
     return info
 
 
-def team_block(logo_rows, info, logos, team, colors, tint, box_w, left_x):
-    """Logo box on the left, info on the right; both teams share left_x."""
-    grid = logos.grid(team.logo_url, box_w, logo_rows * 2) if logo_rows > 0 else None
+def logo_width(logo_rows, aspect):
+    """Columns for a logo box logo_rows tall that is square on screen."""
+    return round(logo_rows * 2 / aspect)
+
+
+def logo_box(logo_rows, logos, team, colors, tint, aspect):
+    """Logo centered both ways in a box at least logo_rows tall, square on screen."""
+    box_w = logo_width(logo_rows, aspect)
+    grid = logos.grid(team.logo_url, box_w, logo_rows * 2, aspect) if logo_rows > 0 else None
     if grid:
         logo = logo_lines(grid, colors)
         lw = len(grid[0])
@@ -147,15 +153,85 @@ def team_block(logo_rows, info, logos, team, colors, tint, box_w, left_x):
         logo = [colors.bg(tint) + " " * box_w + RESET for _ in range(max(3, logo_rows))]
         logo[len(logo) // 2] = colors.bg(tint) + BOLD + team.abbrev.center(box_w) + RESET
         lw = box_w
-    # Center the logo inside its box both ways.
-    height = max(logo_rows, len(logo), len(info))
+    height = max(logo_rows, len(logo))
     lpad = (box_w - lw) // 2
     top = (height - len(logo)) // 2
-    logo = [" " * box_w] * top + [" " * lpad + l + RESET + " " * (box_w - lw - lpad) for l in logo]
-    logo += [" " * box_w] * (height - len(logo))
+    box = [" " * box_w] * top + [" " * lpad + l + RESET + " " * (box_w - lw - lpad) for l in logo]
+    return box + [" " * box_w] * (height - len(box))
+
+
+def team_block(logo_rows, info, logos, team, colors, tint, aspect, left_x):
+    """Logo box on the left, info on the right; both teams share left_x."""
+    logo = logo_box(logo_rows, logos, team, colors, tint, aspect)
+    box_w = visible_len(logo[0])
+    height = max(len(logo), len(info))
+    top = (height - len(logo)) // 2
+    logo = [" " * box_w] * top + logo + [" " * box_w] * (height - len(logo) - top)
     itop = (height - len(info)) // 2
     info = [""] * itop + info + [""] * (height - len(info) - itop)
     return [" " * left_x + l + "    " + r for l, r in zip(logo, info)]
+
+
+def fit(line, width):
+    """Center line in exactly width columns."""
+    line = center(line, width)
+    return line + RESET + " " * max(0, width - visible_len(line))
+
+
+def side_by_side(g, logos, colors, tints, flashes, middle, cols, height, aspect):
+    """Horizontal layout: away | clock | home. None if the window is too narrow."""
+    mid_w = max(visible_len(m) for m in middle)
+    col_w = (cols - mid_w - 8) // 2
+    for scale in (2, 1):
+        infos = [team_info(t, colors, tint, scale, flash, False)
+                 for t, tint, flash in zip((g.away, g.home), tints, flashes)]
+        info_w = max(visible_len(s) for inf in infos for s in inf)
+        if info_w <= col_w and (scale == 1 or height - len(infos[0]) >= 15):
+            break
+    else:
+        return None
+    max_logo_rows = height - len(infos[0]) - 1
+    logo_rows = int(min(max_logo_rows, col_w * aspect / 2, 32) * LOGO_SCALE[settings["logo_size"]])
+    if logo_rows < 4:
+        logo_rows = 0
+    columns = []
+    for team, tint, info in zip((g.away, g.home), tints, infos):
+        logo = logo_box(logo_rows, logos, team, colors, tint, aspect)
+        columns.append([fit(l, col_w) for l in logo + [""] + info])
+    rows = max(len(columns[0]), len(columns[1]), len(middle))
+    mtop = (rows - len(middle)) // 2
+    middle = [""] * mtop + middle + [""] * (rows - len(middle) - mtop)
+    blank = " " * col_w
+    columns = [c + [blank] * (rows - len(c)) for c in columns]
+    return [center(a + "    " + fit(m, mid_w) + "    " + h, cols)
+            for a, m, h in zip(columns[0], middle, columns[1])]
+
+
+def visible_plays(g, latest):
+    """Plays up to the one the (possibly delayed) view shows, newest first.
+
+    ESPN plays are fetched while the list is open, so the newest snapshot has
+    the fullest list; cut it at the view's last play so nothing is spoiled.
+    NHL snapshots carry every goal and penalty, so use the view's own.
+    """
+    if g.play_seq is None:
+        return [t for _, t in g.plays]
+    return [t for seq, t in latest.plays if seq <= g.play_seq]
+
+
+def plays_panel(plays, scroll, height, cols, loading):
+    """The expanded play list, at most height rows, scrolled by `scroll`."""
+    if not plays:
+        return [center(DIM + ("Loading plays…" if loading else "No plays yet.") + RESET, cols)]
+    shown = plays[scroll:scroll + max(1, height - 1)]
+    width = min(cols - 2, max(len(t) for t in shown))
+    rows = []
+    for i, text in enumerate(shown, scroll):
+        text = text[:width].ljust(width)
+        rows.append((BOLD if i == 0 else DIM) + text + RESET)
+    more = len(plays) - scroll - len(shown)
+    note = "%d of %d" % (scroll + 1, len(plays)) + ("  ↓ %d more" % more if more else "")
+    return [center(r, cols) for r in rows] + [center(DIM + note.rjust(width) + RESET, cols)]
 
 
 def buffering_screen(cols, rows, history, delay, now, err, footer):
@@ -179,7 +255,8 @@ def game_screen(term, league, listed, logos, colors, menu):
     err, next_poll = None, 0
     prev_score, alert, alert_side, alert_until = None, None, None, 0
     smoother = ClockSmoother()
-    footer = "b back   o options   +/- delay   q quit"
+    footer = "b back   o options   p plays   +/- delay   q quit"
+    expanded, scroll = False, 0
 
     while True:
         now = time.time()
@@ -250,42 +327,56 @@ def game_screen(term, league, listed, logos, colors, menu):
             middle += gap + [tag]
             if settings["show_situation"] and g.note:
                 middle.append(BOLD + YELLOW + g.note + RESET)
-            if settings["show_last_play"] and g.last_play and not compact:
-                middle.append(DIM + g.last_play[:cols - 2] + RESET)
-            middle = [center(m, cols) for m in middle]
-
-            # Vertical layout: clock in the middle of the screen, each team
-            # centered in its half above and below it.
-            half = (usable - len(middle)) // 2
-            max_logo_rows = max(0, half - 1)
+            last_play = settings["show_last_play"] and g.last_play and not compact
+            aspect = term.pixel_aspect()
+            if expanded:
+                plays = visible_plays(g, history[-1][1])
+                height = max(4, usable // 3)
+                scroll = max(0, min(scroll, len(plays) - (height - 1)))
+                panel = [""] + plays_panel(plays, scroll, height, cols, getattr(poller, "want_plays", False))
+            else:
+                panel = ["", center(DIM + g.last_play[:cols - 2] + RESET, cols)] if last_play else []
             tints = (logos.tint(g.away), logos.tint(g.home))
-            scale = 2 if max_logo_rows >= 14 else 1
-            infos = [
-                team_info(g.away, colors, tints[0], scale, blink_on and alert_side == "away" and alert, compact),
-                team_info(g.home, colors, tints[1], scale, blink_on and alert_side == "home" and alert, compact),
-            ]
-            info_w = max(visible_len(s) for inf in infos for s in inf)
-            width_cap = (cols - 4 - 4 - info_w) // 2  # logo is 2 cols per text row
-            logo_rows = int(min(max_logo_rows, width_cap, 32) * LOGO_SCALE[settings["logo_size"]])
-            if logo_rows < 4:
-                logo_rows = 0
-            box_w = logo_rows * 2
-            left_x = max(0, (cols - (max(box_w, 7) + 4 + info_w)) // 2)
-            away = team_block(logo_rows, infos[0], logos, g.away, colors, tints[0], box_w, left_x)
-            home = team_block(logo_rows, infos[1], logos, g.home, colors, tints[1], box_w, left_x)
+            flashes = [blink_on and alert_side == side and alert for side in ("away", "home")]
 
             lines = [""] * rows
             title = DIM + "%s · %s @ %s · %s" % (league.name, g.away.abbrev, g.home.abbrev, g.venue) + RESET
             if err:
                 title += "  " + YELLOW + "(update failed, retrying)" + RESET
             lines[0] = center(title, cols)
-            mid_top = 1 + (usable - len(middle)) // 2
-            mid_bot = mid_top + len(middle)
-            margin = 0 if compact else 1
-            place(lines, away, 1, mid_top - margin)
-            place(lines, middle, mid_top, mid_bot)
-            place(lines, home, mid_bot + margin, rows - 1)
             lines[rows - 1] = center(DIM + footer + RESET, cols)
+
+            body = None
+            if settings["layout"] == "horizontal":
+                body = side_by_side(g, logos, colors, tints, flashes, middle, cols, usable - len(panel), aspect)
+                if body:
+                    place(lines, body + panel, 1, rows - 1)
+
+            if body is None:
+                # Vertical layout (also the fallback when the window is too
+                # narrow for side by side): clock in the middle of the screen,
+                # each team centered in its half above and below it.
+                middle = [center(m, cols) for m in middle] + (panel if expanded else panel[1:])
+                half = (usable - len(middle)) // 2
+                max_logo_rows = max(0, half - 1)
+                scale = 2 if max_logo_rows >= 14 else 1
+                infos = [team_info(t, colors, tint, scale, flash, compact)
+                         for t, tint, flash in zip((g.away, g.home), tints, flashes)]
+                info_w = max(visible_len(s) for inf in infos for s in inf)
+                width_cap = (cols - 4 - 4 - info_w) * aspect / 2  # rows whose square box fits
+                logo_rows = int(min(max_logo_rows, width_cap, 32) * LOGO_SCALE[settings["logo_size"]])
+                if logo_rows < 4:
+                    logo_rows = 0
+                box_w = max(logo_width(logo_rows, aspect), 7)
+                left_x = max(0, (cols - (box_w + 4 + info_w)) // 2)
+                away = team_block(logo_rows, infos[0], logos, g.away, colors, tints[0], aspect, left_x)
+                home = team_block(logo_rows, infos[1], logos, g.home, colors, tints[1], aspect, left_x)
+                mid_top = 1 + (usable - len(middle)) // 2
+                mid_bot = mid_top + len(middle)
+                margin = 0 if compact else 1
+                place(lines, away, 1, mid_top - margin)
+                place(lines, middle, mid_top, mid_bot)
+                place(lines, home, mid_bot + margin, rows - 1)
             term.draw(lines)
 
         key = term.read_key(0.25)
@@ -295,6 +386,13 @@ def game_screen(term, league, listed, logos, colors, menu):
             return True
         if key == "o":
             menu.toggle()
+        elif key == "p":
+            expanded, scroll = not expanded, 0
+            if hasattr(poller, "want_plays"):
+                poller.want_plays = expanded
+                next_poll = min(next_poll, time.time())   # fetch the list right away
+        elif expanded and key in ("up", "k", "down", "j"):
+            scroll = max(0, scroll + (-1 if key in ("up", "k") else 1))
         elif key in ("+", "="):
             settings["delay"] = step_delay(settings["delay"], 1)
             save_settings()

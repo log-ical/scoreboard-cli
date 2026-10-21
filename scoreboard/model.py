@@ -38,6 +38,8 @@ class Game:
     venue: str = ""
     final_label: str = "FINAL"     # "FINAL", "FINAL/OT", "FINAL/SO"
     last_play: str = ""
+    plays: list = field(default_factory=list)   # [(seq, text)], newest first; seq is None for NHL
+    play_seq: int = None           # sequence number of the play behind last_play (ESPN)
     note: str = ""                 # extra live line, e.g. NFL down & distance
     ref: dict = field(default_factory=dict)   # league-specific ids for polling
 

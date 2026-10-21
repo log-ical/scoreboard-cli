@@ -51,20 +51,46 @@ def _strength_tag(data, side):
     return ""
 
 
-def _last_goal(data):
-    goals = [(p, g) for p in (data.get("summary") or {}).get("scoring", []) for g in p.get("goals", [])]
-    if not goals:
-        return ""
-    p, g = goals[-1]
-    desc = "Last goal: %s %s (%s %s)" % (
-        (g.get("teamAbbrev") or {}).get("default", ""), (g.get("name") or {}).get("default", ""),
-        _period_labels(p.get("periodDescriptor"))[1], g.get("timeInPeriod", ""))
+def _goal_text(g):
+    desc = "%s %s" % ((g.get("teamAbbrev") or {}).get("default", ""), (g.get("name") or {}).get("default", ""))
     assists = [(a.get("name") or {}).get("default", "") for a in g.get("assists", [])]
     if assists:
         desc += " · " + ", ".join(assists)
     if g.get("strength") in ("pp", "sh"):
         desc += " · " + g["strength"].upper()
     return desc
+
+
+def _last_goal(data):
+    goals = [(p, g) for p in (data.get("summary") or {}).get("scoring", []) for g in p.get("goals", [])]
+    if not goals:
+        return ""
+    p, g = goals[-1]
+    name, _, rest = _goal_text(g).partition(" · ")
+    return "Last goal: %s (%s %s)%s" % (name, _period_labels(p.get("periodDescriptor"))[1],
+                                       g.get("timeInPeriod", ""), " · " + rest if rest else "")
+
+
+def _plays(data):
+    """Goals and penalties, newest first, for the expanded play list."""
+    summary = data.get("summary") or {}
+    events = []
+    for kind, items in (("GOAL", "goals"), ("PENALTY", "penalties")):
+        for p in summary.get("scoring" if kind == "GOAL" else "penalties", []):
+            pd = p.get("periodDescriptor") or {}
+            for e in p.get(items, []):
+                if kind == "GOAL":
+                    text = _goal_text(e)
+                else:
+                    who = (e.get("committedByPlayer") or {}).get("lastName") or {}
+                    text = "%s %s · %s (%s min)" % (
+                        (e.get("teamAbbrev") or {}).get("default", ""), who.get("default") or "bench",
+                        (e.get("descKey") or "").replace("-", " "), e.get("duration", ""))
+                t = e.get("timeInPeriod", "")
+                events.append(((pd.get("number") or 0, t.zfill(5)),
+                               "%-4s %5s  %-7s %s" % (_period_labels(pd)[1], t, kind, text)))
+    events.sort(key=lambda x: x[0], reverse=True)
+    return [(None, text) for _, text in events]
 
 
 def parse_game(data, data_t=0.0, detail=False):
@@ -105,6 +131,7 @@ def parse_game(data, data_t=0.0, detail=False):
             if tag:
                 team.tags.append(tag)
         g.last_play = _last_goal(data)
+        g.plays = _plays(data)
     return g
 
 

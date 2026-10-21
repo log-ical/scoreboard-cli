@@ -19,6 +19,7 @@ DEFAULTS = {
     "show_stats": True,
     "show_situation": True,
     "logo_size": "large",
+    "layout": "vertical",
     "color": "auto",
     "clock_24h": False,
 }
@@ -41,6 +42,7 @@ OPTIONS = [
     ("show_stats", "Show team stats", [True, False]),
     ("show_situation", "Show game situation", [True, False]),
     ("logo_size", "Logo size", ["small", "medium", "large"]),
+    ("layout", "Logo layout", ["vertical", "horizontal"]),
     ("color", "Color mode", ["auto", "truecolor", "256", "16"]),
     ("clock_24h", "24-hour start times", [False, True]),
 ]
@@ -53,6 +55,7 @@ HINTS = {
     "show_stats": "NHL: shots on goal. NBA: timeouts and fouls. NFL: timeouts.",
     "show_situation": "NHL: power play. NBA: bonus. NFL: possession, down & distance.",
     "logo_size": "Logos always shrink to fit the window.",
+    "layout": "Vertical: away above home. Horizontal: side by side, clock between.",
 }
 
 LOGO_SCALE = {"small": 0.6, "medium": 0.8, "large": 1.0}
