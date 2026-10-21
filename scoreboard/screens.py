@@ -1,9 +1,11 @@
 """The game list and the live game view."""
 
 import dataclasses
+import queue
 import re
 import sys
 import textwrap
+import threading
 import time
 
 from .clock import ClockSmoother, clock_target
@@ -25,24 +27,65 @@ def with_footer(lines, rows, cols, text):
     return lines[:rows - 1] + [center(DIM + text + RESET, cols)]
 
 
+def drain(q):
+    """Everything waiting in queue q, oldest first, without blocking."""
+    items = []
+    while True:
+        try:
+            items.append(q.get_nowait())
+        except queue.Empty:
+            return items
+
+
 # --------------------------------------------------------------------------
 # Game list
+
+class ListLoader:
+    """Loads game lists on daemon threads, so the screen never waits on them.
+
+    Only the screen's thread calls its methods; results come back through
+    a queue as (league key, games, error).
+    """
+
+    def __init__(self):
+        self.results = queue.Queue()
+        self.busy = set()      # league keys being loaded
+
+    def load(self, league):
+        """Start loading league's games, unless that's already under way."""
+        if league.key not in self.busy:
+            self.busy.add(league.key)
+            threading.Thread(target=self._run, args=(league,), daemon=True).start()
+
+    def _run(self, league):
+        try:
+            self.results.put((league.key, league.list_games(), None))
+        except Exception as e:
+            self.results.put((league.key, None, str(e)))
+
+    def done(self):
+        """Lists loaded since the last call."""
+        items = drain(self.results)
+        self.busy.difference_update(key for key, _, _ in items)
+        return items
+
 
 def game_list_screen(term, menu):
     """Return (league, game) to watch, or None to quit."""
     idx = next((i for i, lg in enumerate(LEAGUES) if lg.key == settings["league"]), 0)
     cache = {}          # league key -> (fetched_at, games, error)
+    loader = ListLoader()
     show_all, sel = False, 0
     while True:
         league = LEAGUES[idx]
+        for key, games, err in loader.done():
+            if err:
+                games = cache[key][1] if key in cache else []
+            cache[key] = (time.time(), games, err)
         entry = cache.get(league.key)
         if entry is None or time.time() - entry[0] > LIST_REFRESH:
-            try:
-                games, err = league.list_games(), None
-            except Exception as e:
-                games, err = (entry[1] if entry else []), str(e)
-            entry = cache[league.key] = (time.time(), games, err)
-        _, games, err = entry
+            loader.load(league)
+        _, games, err = entry or (0, [], None)
 
         cols, rows = term.size()
         if menu.open:
@@ -63,7 +106,9 @@ def game_list_screen(term, menu):
             label = " %s%s " % (lg.name, " %s●%s%s" % (RED, RESET, BOLD + (REVERSE if i == idx else "")) if n else "")
             tabs.append(REVERSE + BOLD + label + RESET if i == idx else DIM + label + RESET)
         lines = ["", center("   ".join(tabs), cols), ""]
-        if err and not games:
+        if entry is None:
+            lines.append(center(DIM + "Loading %s games…" % league.name + RESET, cols))
+        elif err and not games:
             lines.append(center(RED + "Could not reach %s data: %s" % (league.name, err[:60]) + RESET, cols))
         elif not games:
             lines.append(center("No %s games today." % league.name, cols))
@@ -93,12 +138,14 @@ def game_list_screen(term, menu):
         if settings["delay"]:
             lines.append(center(DIM + "Stream delay: %s" % fmt_delay(settings["delay"]) + RESET, cols))
         term.draw(with_footer(lines, rows, cols,
-                              "←/→ league   ↑/↓ select   Enter watch   a live/all   o options   r refresh   q quit"))
+                              "←/→ league  ↑/↓ select  Enter watch  a live/all  o options  r refresh  q quit"))
 
-        key = term.read_key(0.5)
+        key = term.read_key(0.1 if loader.busy else 0.5)   # show a list soon after it arrives
         if key in ("q", "Q", "esc"):
             return None
-        if key in ("up", "k"):
+        if key == "\x0c":   # Ctrl-L: repaint the whole screen
+            term.invalidate()
+        elif key in ("up", "k"):
             sel -= 1
         elif key in ("down", "j"):
             sel += 1
@@ -113,7 +160,7 @@ def game_list_screen(term, menu):
         elif key == "a":
             show_all, sel = not show_all, 0
         elif key == "r":
-            cache.pop(league.key, None)
+            loader.load(league)   # the list stays up until the new one is in
         elif key == "o":
             menu.toggle()
         elif key == "enter" and shown:
@@ -182,8 +229,9 @@ def team_block(logo_rows, info, logos, team, colors, tint, aspect, left_x):
 
 def fit(line, width):
     """Center line in exactly width columns."""
-    line = center(line, width)
-    return line + RESET + " " * max(0, width - visible_len(line))
+    n = visible_len(line)
+    pad = max(0, (width - n) // 2)
+    return " " * pad + line + RESET + " " * max(0, width - n - pad)
 
 
 def side_by_side(g, logos, colors, tints, flashes, middle, tail, cols, height, aspect, panel=None):
@@ -267,7 +315,9 @@ def plays_panel(plays, scroll, height, width, loading, older=False):
         rows += [(BOLD if i == 0 else DIM) + w.ljust(width) + RESET for w in wrapped[i][:room]]
         shown += 1
     note = "%d-%d of %d%s" % (scroll + 1, scroll + shown, len(plays), "+" if older else "")
-    if older and scroll + shown >= len(plays):
+    if loading:
+        note += "   loading…"
+    elif older and scroll + shown >= len(plays):
         note += "   ] earlier plays"
     return rows + [DIM + note.rjust(width) + RESET], scroll, shown
 
@@ -286,11 +336,116 @@ def buffering_screen(cols, rows, history, delay, now, err, footer):
     return with_footer(lines, rows, cols, footer)
 
 
+class GameFeed:
+    """Polls a game on a daemon thread, so the screen never waits on the network.
+
+    The thread owns the poller: nothing else touches it once it starts.
+    Results come back through a queue as ("game", snapshot, data_time),
+    ("error", text) and, for pollers with their own play list (ESPN:
+    want_plays, load_older, play_history), ("plays", [(seq, text)] newest
+    first, whether older plays exist), a copy made on the thread, so the
+    screen never reads the dict the poller is changing. The screen's requests
+    are fields under `lock` plus a wake-up. stop() lets the screen leave at
+    once: the thread posts nothing more and exits after any request in flight.
+    """
+
+    def __init__(self, poller):
+        self._poller = poller
+        self.has_plays = hasattr(poller, "play_history")
+        self.results = queue.Queue()
+        self.lock = threading.Lock()
+        # Requests, under the lock: play list wanted; list requests made
+        # (asked) and answered by a poll (served); older-page requests made
+        # and answered. Counting means a request made mid-load is never lost.
+        self.want_plays, self.asked, self.served = False, 0, 0
+        self.older_asked = self.older_served = 0
+        self.wake, self.stopped = threading.Event(), threading.Event()
+        self.thread = threading.Thread(target=self._run, daemon=True)
+        self.thread.start()
+
+    def show_plays(self, on):
+        """The play list was opened or closed: poll right away (fetching the list if open)."""
+        if self.has_plays:
+            with self.lock:
+                self.want_plays, self.asked = on, self.asked + 1
+            self.wake.set()
+
+    def load_older(self):
+        """Fetch the page of plays before the oldest one loaded."""
+        if self.has_plays:
+            with self.lock:
+                self.older_asked += 1
+            self.wake.set()
+
+    def plays_pending(self):
+        """True while plays the open list asked for are on their way. Check
+        before updates(): once it's False, updates() has them."""
+        with self.lock:
+            return self.want_plays and (self.served < self.asked or self.older_served < self.older_asked)
+
+    def stop(self):
+        self.stopped.set()
+        self.wake.set()
+
+    def updates(self):
+        """Results posted since the last call, oldest first."""
+        return drain(self.results)
+
+    def _post(self, *msg):
+        if not self.stopped.is_set():
+            self.results.put(msg)
+
+    def _run(self):
+        poller, next_poll = self._poller, 0.0
+        while True:
+            self.wake.wait(max(0.0, next_poll - time.time()))
+            self.wake.clear()   # before reading the requests, so none is missed
+            if self.stopped.is_set():
+                return
+            with self.lock:
+                want, asked, older = self.want_plays, self.asked, self.older_asked
+            try:
+                if self.has_plays:
+                    poller.want_plays = want
+                if older > self.older_served:
+                    poller.load_older()   # one page for every request made before this read
+                    self._post("plays", *poller.play_history())
+                    with self.lock:
+                        self.older_served = older
+                    if self.stopped.is_set():
+                        return            # left while it loaded: don't start a poll too
+                if asked > self.served or time.time() >= next_poll:
+                    started = time.time()
+                    try:
+                        snap, data_t, wait = poller.poll()
+                        self._post("game", snap, data_t)
+                    except Exception as e:
+                        self._post("error", str(e))
+                        wait = 5
+                    next_poll = started + wait
+                    if self.has_plays:
+                        self._post("plays", *poller.play_history())
+                    with self.lock:
+                        self.served = asked
+            except Exception as e:     # a bug, not the network: show it and carry on
+                self._post("error", str(e))
+                next_poll = time.time() + 5
+
+
 def game_screen(term, league, listed, logos, colors, menu):
     """Show one game live. Return True to go back to the list, False to quit."""
-    poller = league.open(listed)
+    feed = GameFeed(league.open(listed))
+    try:
+        return game_view(term, league, feed, logos, colors, menu)
+    finally:
+        feed.stop()   # don't wait for a request in flight
+
+
+def game_view(term, league, feed, logos, colors, menu):
+    """game_screen's loop, drawing what feed brings in."""
     history = []          # [(data_time, Game)], oldest first
-    err, next_poll = None, 0
+    err = None
+    loaded = ([], False) if feed.has_plays else None   # ESPN: (plays, whether older ones exist)
     prev_score, alert, alert_side, alert_until = None, None, None, 0
     smoother = ClockSmoother()
     footer = "b back   o options   p plays   +/- delay   q quit"
@@ -298,21 +453,23 @@ def game_screen(term, league, listed, logos, colors, menu):
 
     while True:
         now = time.time()
-        if now >= next_poll:
-            try:
-                snap, data_t, wait = poller.poll()
+        pending = feed.plays_pending()   # first: see plays_pending()
+        updates = feed.updates()
+        for kind, *msg in updates:
+            if kind == "game":
+                snap, data_t = msg
                 # A snapshot behind the newest one is a stale cached copy.
                 if not history or (data_t > history[-1][0] and not is_stale(snap, history[-1][1])):
                     history.append((data_t, snap))
-                next_poll = now + wait
                 err = None
-            except Exception as e:
-                err = str(e)
-                next_poll = now + 5
+            elif kind == "error":
+                err = msg[0]
+            else:
+                loaded = msg
+        if updates:
             # Drop snapshots too old for any allowed delay (keep one older).
             while len(history) > 2 and history[1][0] < now - MAX_DELAY - 60:
                 history.pop(0)
-            now = time.time()
 
         cols, rows = term.size()
         if menu.open:
@@ -383,17 +540,18 @@ def game_screen(term, league, listed, logos, colors, menu):
             tail = ["", center(DIM + g.last_play[:cols - 2] + RESET, cols)] if last_play else []
             panel = None
             if expanded:
-                if hasattr(poller, "play_history"):
-                    loaded, older = poller.play_history()
-                    plays = visible_plays(g, loaded)
+                if loaded is not None:
+                    plays, older = visible_plays(g, loaded[0]), loaded[1]
                 else:
                     plays, older = visible_plays(g), False
-                loading = getattr(poller, "want_plays", False)
+                loading = pending
 
                 def panel(width, height):
                     nonlocal scroll, page, at_end
-                    rows, scroll, page = plays_panel(plays, scroll, height, width, loading, older)
-                    at_end = scroll + page >= len(plays)
+                    rows, top, page = plays_panel(plays, scroll, height, width, loading, older)
+                    at_end = top + page >= len(plays)
+                    if not loading:
+                        scroll = top   # while plays are loading, keep a scroll past the end for them
                     return rows
             tints = (logos.tint(g.away), logos.tint(g.home))
             flashes = [blink_on and alert_side == side and alert for side in ("away", "home")]
@@ -450,16 +608,16 @@ def game_screen(term, league, listed, logos, colors, menu):
             return False
         if key in ("b", "esc", "\x7f"):
             return True
-        if key == "o":
+        if key == "\x0c":   # Ctrl-L: repaint the whole screen
+            term.invalidate()
+        elif key == "o":
             menu.toggle()
         elif key == "p":
             expanded, scroll = not expanded, 0
-            if hasattr(poller, "want_plays"):
-                poller.want_plays = expanded
-                next_poll = min(next_poll, time.time())   # fetch the list right away
+            feed.show_plays(expanded)
         elif expanded and key in ("up", "k", "down", "j", "[", "]"):
-            if key in ("down", "j", "]") and at_end and hasattr(poller, "load_older"):
-                poller.load_older()   # past the loaded plays: fetch the page before them
+            if key in ("down", "j", "]") and at_end and loaded and loaded[1]:
+                feed.load_older()   # past the loaded plays: fetch the page before them
             step = page if key in ("[", "]") else 1
             scroll = max(0, scroll + (-step if key in ("up", "k", "[") else step))
         elif key in ("+", "="):

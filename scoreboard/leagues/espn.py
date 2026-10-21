@@ -11,7 +11,9 @@ its wallclock timestamp says when the clock had the value it shows.
 
 import copy
 import re
+import threading
 import time
+from functools import partial
 from urllib.parse import urlparse
 
 from ..model import Game, Team, ordinal, parse_utc
@@ -58,6 +60,33 @@ def _team(c):
 def _ref_id(ref):
     m = re.search(r"/teams/(\d+)", (ref or {}).get("$ref", ""))
     return m.group(1) if m else None
+
+
+def _parallel(*calls):
+    """Run the calls (functions of no arguments) at once and return their
+    results in order, raising the first one's error if any failed.
+
+    All but the last run on daemon threads (not an executor, whose threads
+    Python waits for at exit), so a hung request can't hold up quitting.
+    """
+    results, errors = [None] * len(calls), [None] * len(calls)
+
+    def run(i):
+        try:
+            results[i] = calls[i]()
+        except Exception as e:
+            errors[i] = e
+    threads = [threading.Thread(target=run, args=(i,), daemon=True) for i in range(len(calls) - 1)]
+    for t in threads:
+        t.start()
+    if calls:
+        run(len(calls) - 1)
+    for t in threads:
+        t.join()
+    for e in errors:
+        if e is not None:
+            raise e
+    return results
 
 
 class EspnLeague:
@@ -218,6 +247,8 @@ class NFL(EspnLeague):
 
 
 class Poller:
+    """Not thread-safe: the game view's worker thread is its only user."""
+
     def __init__(self, league, game):
         self.league = league
         self.base = game
@@ -247,25 +278,27 @@ class Poller:
     def fetch_plays(self):
         """Load the newest two pages of plays (the API pages from the first play on)."""
         url = self.core + "/plays?limit=%d&page=%%d" % PLAY_HISTORY
+
+        def get(nums):
+            return dict(zip(nums, _parallel(*[partial(fetch_json, url % n) for n in nums])))
         start = self.newest_page
         if start is None:
             count = fetch_json(self.core + "/plays?limit=1").get("count") or 0
             start = max(1, -(-count // PLAY_HISTORY))
-        pages = {start: fetch_json(url % start)}
+        # A first load shows two pages: fetch the one before `start` alongside it.
+        pages = get([start - 1, start] if self.oldest_page is None and start > 1 else [start])
         last = max(start, pages[start].get("pageCount") or 1)
         want = range(max(1, last - 1), last + 1)
-        for n in want:
-            if n not in pages:
-                pages[n] = fetch_json(url % n)
-        if self.oldest_page is None or want[0] > start + 1:
-            # Nothing loaded yet, or a gap since the last load: start over,
-            # keeping only plays newer than these pages (seen by polling).
-            entries = [e for n in want for e in self._entries(pages[n])]
+        # Nothing loaded yet, or a gap since the last load: start over.
+        restart = self.oldest_page is None or want[0] > start + 1
+        need = want if restart else range(start, last + 1)
+        pages.update(get([n for n in need if n not in pages]))
+        entries = [e for n in need for e in self._entries(pages[n])]
+        if restart:
+            # Keep only plays newer than these pages (seen by polling).
             newest = max((seq for seq, _ in entries), default=0)
             self.plays = {seq: t for seq, t in self.plays.items() if seq > newest}
             self.oldest_page = want[0]
-        else:
-            entries = [e for n in range(start, last + 1) for e in self._entries(pages[n])]
         self.plays.update(entries)
         self.newest_page = last
         self.plays_fetched, self.plays_ref = time.time(), self.play_ref
@@ -285,17 +318,21 @@ class Poller:
         """([(seq, text)] newest first, whether older plays can be loaded)."""
         return sorted(self.plays.items(), reverse=True), bool(self.oldest_page and self.oldest_page > 1)
 
+    def _situation(self):
+        try:
+            return fetch_json(self.core + "/situation")
+        except Exception:
+            return {}          # not published before the game
+
     def poll(self):
         """Return (game, data_time, seconds_until_next_poll)."""
         L = self.league
         now = time.time()
-        status, age, max_age = fetch_json_timed(self.core + "/status")
+        # Independent documents: fetch them at once.
+        (status, age, max_age), situation = _parallel(
+            lambda: fetch_json_timed(self.core + "/status"), self._situation)
         if age is None:
             age = max_age / 2   # ESPN sends no Age: assume a half-expired copy
-        try:
-            situation = fetch_json(self.core + "/situation")
-        except Exception:
-            situation = {}     # not published before the game
         ref = (situation.get("lastPlay") or {}).get("$ref")
         if ref and ref != self.play_ref:
             self.play = fetch_json(ref)

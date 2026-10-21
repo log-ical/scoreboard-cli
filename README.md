@@ -16,6 +16,8 @@ Live NHL, NBA and NFL scores in the terminal. Python 3 standard library only.
 | Game view | `p` expand/collapse the play list (`↑/↓` scroll, `[`/`]` page) · `+`/`-` adjust delay · `o` options · `b`/`Esc` back · `q` quit |
 | Options   | `↑/↓` choose · `←/→` change · `o`/`Esc` close |
 
+`Ctrl-L` repaints the screen if anything ever looks garbled.
+
 The game view puts the away team on top and the home team on the bottom, each centered in its half,
 with the period and clock in the middle. Before a game starts the big clock counts down to the scheduled start
 (`1:04:59`, or `2D 03:15` for days, hours and minutes), and the game list shows `in 2h 05m` for games starting within a day. With **Logo layout** set to horizontal, the teams sit side by

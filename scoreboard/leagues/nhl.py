@@ -1,5 +1,6 @@
 """NHL via the public NHL web API (api-web.nhle.com)."""
 
+import threading
 import time
 
 from ..model import Game, Team, ordinal
@@ -14,26 +15,39 @@ ESPN_ABBREV = {"SJS": "sj", "TBL": "tb", "NJD": "nj", "LAK": "la", "UTA": "utah"
 STANDINGS_REFRESH = 300   # seconds between standings fetches (for team records)
 
 LIVE_STATES = ("LIVE", "CRIT")
+FINAL_STATES = ("FINAL", "OFF")
 
-# Season records by abbreviation, from the standings. Fetched with the game
-# list, never while watching, so a game that ends in real time can't show
-# up in a record before a delayed view reaches the final.
+# Season records by abbreviation, from the standings. Requested with the
+# game list, never while watching, so a game that ends in real time can't
+# show up in a record before a delayed view reaches the final. The standings
+# are slow, so they load in the background instead of holding up the list,
+# and show up once they arrive (the request still dates from the list).
 records, records_fetched = {}, 0.0
+_records_lock = threading.Lock()
 
 
 def refresh_records():
+    """Start loading the standings if due; return the thread loading them, or None."""
     global records_fetched
-    if time.time() - records_fetched < STANDINGS_REFRESH:
-        return
-    records_fetched = time.time()
+    with _records_lock:   # list loads for two screens can overlap
+        if time.time() - records_fetched < STANDINGS_REFRESH:
+            return None
+        records_fetched = time.time()
+    t = threading.Thread(target=_load_records, daemon=True)
+    t.start()
+    return t
+
+
+def _load_records():
     try:
+        loaded = {}
         for t in fetch_json(API + "/standings/now").get("standings", []):
             abbrev = (t.get("teamAbbrev") or {}).get("default")
             if abbrev:
-                records[abbrev] = "%d-%d-%d" % (t.get("wins", 0), t.get("losses", 0), t.get("otLosses", 0))
+                loaded[abbrev] = "%d-%d-%d" % (t.get("wins", 0), t.get("losses", 0), t.get("otLosses", 0))
+        records.update(loaded)   # one step, for readers on other threads
     except Exception:
         pass
-FINAL_STATES = ("FINAL", "OFF")
 
 
 def _period_labels(pd):
@@ -178,7 +192,7 @@ class NHL:
     name = "NHL"
 
     def list_games(self):
-        refresh_records()
+        refresh_records()   # in the background: the list doesn't wait for it
         return [parse_game(g) for g in fetch_json(API + "/score/now").get("games", [])]
 
     def open(self, game):

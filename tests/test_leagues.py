@@ -25,7 +25,8 @@ class NhlTest(unittest.TestCase):
             nhl.fetch_json = lambda url, timeout=10: {"standings": [
                 {"teamAbbrev": {"default": "SJS"}, "wins": 8, "losses": 2, "otLosses": 1}]}
             nhl.records_fetched = 0.0
-            nhl.refresh_records()
+            nhl.refresh_records().join(5)
+            self.assertIsNone(nhl.refresh_records())   # not due again for a while
             self.assertEqual(nhl._team({"abbrev": "SJS"}).record, "8-2-1")
             self.assertEqual(nhl._team({"abbrev": "BOS"}).record, "")
         finally:
@@ -179,6 +180,13 @@ class EspnTest(unittest.TestCase):
             plays, older = poller.play_history()
             self.assertEqual(plays[-1][0], 1)
             self.assertFalse(older)
+            # A refresh (new last play, list due) only needs the newest page.
+            api.docs["/situation"] = {"lastPlay": {"$ref": "http://core/plays/2"}}
+            poller.plays_fetched = 0.0
+            del urls[:]
+            poller.poll()
+            self.assertEqual([u.rsplit("?", 1)[1] for u in urls if "/plays?" in u], ["limit=25&page=3"])
+            self.assertEqual(len(poller.play_history()[0]), 61)
 
     def test_final_game(self):
         play = fixture("nfl_play_final.json")
