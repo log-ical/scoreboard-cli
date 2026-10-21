@@ -6,6 +6,7 @@ Live NHL, NBA and NFL scores in the terminal. Python 3 standard library only.
     scoreboard nba          # or: nhl | nfl
     scoreboard --delay 45   # stream delay in seconds (saved)
     scoreboard --color 256  # force a color mode: truecolor | 256 | 16
+    scoreboard --symbols console   # force a symbol set: full | console | ascii
     nhl-live                # old name, same as `scoreboard nhl`
 
 ## Keys
@@ -47,6 +48,9 @@ week; each day gets a heading, and the list scrolls. Days ahead are refetched ev
   drive direction and first-down line. NBA: a lead tracker or the last shots on a half court. NHL: this
   period's shots on a rink map, or a zone strip showing where the latest event happened. `v` switches
   the style, remembered per league. It needs about a 40-row window in the vertical layout.
+- **Symbols**: auto picks console-safe symbols on the Linux text console (`TERM=linux`), whose fonts draw
+  many symbols alike (`◦` and `●`), ASCII when the terminal has no Unicode, and full Unicode elsewhere. On the
+  console, logos are drawn without background colors, which it can only show dark (that caused stripes).
 - **Logo size**, **Logo layout** (vertical or horizontal), **Color mode**, **24-hour start times**
 
 ## Data and the clock

@@ -11,6 +11,7 @@ import sys
 import termios
 import time
 import tty
+import unicodedata
 
 BASIC16 = [
     (0, 0, 0), (170, 0, 0), (0, 170, 0), (170, 85, 0), (0, 0, 170),
@@ -150,6 +151,62 @@ SYNC_BEGIN, SYNC_END = "\x1b[?2026h", "\x1b[?2026l"
 FULL_REDRAW_EVERY = 10.0   # seconds; repaints anything else that wrote to the screen
 
 
+# --------------------------------------------------------------------------
+# Symbol sets. The app draws with full Unicode; a frame is translated as it's
+# written for terminals whose fonts lack some of it. "console" is for the
+# Linux text console: its fonts have light box drawing, blocks and Latin-1,
+# but quietly map other symbols to look-alikes (◦ and ● come out the same).
+# "ascii" is for terminals without Unicode: solid blocks become reverse-video
+# spaces, which look the same in color. Every substitute is one column wide,
+# so nothing moves. The play-by-play markers (shots, goals, the ball) are
+# picked per set by live.py, since one symbol means different things there.
+
+SYMBOL_SETS = ("full", "console", "ascii")
+_SOLID = REVERSE_ON, REVERSE_OFF = "\x1b[7m", "\x1b[27m"
+_CONSOLE = {"●": "*", "◦": "+", "○": "o", "◯": "U", "▶": ">", "◀": "<", "▲": "^", "▼": "v", "■": "#",
+            "‹": "<", "›": ">", "…": ".", "←": "<", "→": ">", "↑": "^", "↓": "v",
+            "━": "─", "┃": "│", "╭": "┌", "╮": "┐", "╰": "└", "╯": "┘"}
+_ASCII = dict(_CONSOLE, **{"─": "-", "━": "=", "│": "|", "┃": "|", "·": ".", "▌": "[", "▐": "]",
+                           "█": REVERSE_ON + " " + REVERSE_OFF, "▀": REVERSE_ON + " " + REVERSE_OFF,
+                           "▄": REVERSE_ON + " " + REVERSE_OFF},
+              **{c: "+" for c in "┌┐└┘┬┴├┤┼╭╮╰╯"})
+_TABLES = {"full": None, "console": str.maketrans(_CONSOLE), "ascii": str.maketrans(_ASCII)}
+symbols = "full"   # the set in use: set_symbols()
+
+
+def detect_symbols():
+    """The symbol set for this terminal."""
+    encoding = (getattr(sys.stdout, "encoding", "") or "").lower().replace("-", "")
+    term = os.environ.get("TERM", "")
+    if encoding != "utf8" or term == "dumb":
+        return "ascii"
+    if term == "linux" or term.startswith(("vt", "cons")):
+        return "console"   # the Linux text console, and its relatives
+    return "full"
+
+
+def set_symbols(mode):
+    """Use a symbol set: one of SYMBOL_SETS, or "auto" to detect it."""
+    global symbols
+    symbols = detect_symbols() if mode == "auto" else mode if mode in SYMBOL_SETS else "full"
+
+
+def _ascii_letter(ch):
+    base = unicodedata.normalize("NFKD", ch).encode("ascii", "ignore").decode()
+    return base[:1] or "?"
+
+
+def translate(line):
+    """line in the symbol set in use; it keeps its width."""
+    table = _TABLES[symbols]
+    if table is None or line.isascii():
+        return line
+    line = line.translate(table)
+    if symbols == "ascii" and not line.isascii():
+        line = "".join(ch if ch.isascii() else _ascii_letter(ch) for ch in line)   # é -> e
+    return line
+
+
 def clip(line, cols):
     """line cut to at most cols visible cells, keeping its escapes. A longer
     line would wrap, and on the last row scroll the screen, leaving every
@@ -241,7 +298,7 @@ class Terminal:
         """
         cols, rows = self.size()
         n = len(lines)
-        new = [clip(lines[i], cols) if i < n else "" for i in range(rows)]
+        new = [clip(translate(lines[i]), cols) if i < n else "" for i in range(rows)]
         old, now = self._shown, time.monotonic()
         if old is None or self._shown_size != (cols, rows) or now - self._full_at >= FULL_REDRAW_EVERY:
             # Every row, top to bottom, with no newline after the last one

@@ -3,7 +3,7 @@
 import json
 import os
 
-from .term import BOLD, DIM, RESET, REVERSE, center, detect_color_mode
+from .term import BOLD, DIM, RESET, REVERSE, center, detect_color_mode, set_symbols
 
 CONFIG_PATH = os.path.join(os.path.expanduser("~"), ".config", "scoreboard", "settings.json")
 OLD_CONFIG_PATH = os.path.join(os.path.expanduser("~"), ".config", "nhl-live", "settings.json")
@@ -24,6 +24,7 @@ DEFAULTS = {
     "logo_size": "large",
     "layout": "vertical",
     "color": "auto",
+    "symbols": "auto",
     "clock_24h": False,
 }
 
@@ -49,6 +50,7 @@ OPTIONS = [
     ("logo_size", "Logo size", ["small", "medium", "large"]),
     ("layout", "Logo layout", ["vertical", "horizontal"]),
     ("color", "Color mode", ["auto", "truecolor", "256", "16"]),
+    ("symbols", "Symbols", ["auto", "full", "console", "ascii"]),
     ("clock_24h", "24-hour start times", [False, True]),
 ]
 
@@ -60,6 +62,7 @@ HINTS = {
     "show_stats": "NHL: shots on goal. NBA: timeouts and fouls. NFL: timeouts.",
     "show_situation": "NHL: power play. NBA: bonus. NFL: possession, down & distance.",
     "logo_size": "Logos always shrink to fit the window.",
+    "symbols": "auto: console-safe on the Linux text console, ASCII without Unicode, full Unicode elsewhere.",
     "play_by_play": "A live field, court or rink under the clock. In a game, v switches its style.",
     "layout": "Vertical: away above home. Horizontal: side by side, clock between.",
 }
@@ -143,6 +146,8 @@ class OptionsMenu:
                 settings[k] = choices[(i + direction) % len(choices)]
             if k == "color":
                 self.colors.mode = detect_color_mode() if settings[k] == "auto" else settings[k]
+            elif k == "symbols":
+                set_symbols(settings[k])
 
     def render(self, cols, rows):
         label_w = max(len(o[1]) for o in OPTIONS)

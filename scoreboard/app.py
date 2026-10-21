@@ -7,7 +7,7 @@ from .leagues import BY_KEY
 from .logos import LogoStore
 from .screens import game_list_screen, game_screen
 from .settings import MAX_DELAY, OptionsMenu, load_settings, save_settings, settings
-from .term import Colors, Terminal, detect_color_mode
+from .term import SYMBOL_SETS, Colors, Terminal, detect_color_mode, set_symbols
 
 
 def main(argv=None):
@@ -15,6 +15,8 @@ def main(argv=None):
     p.add_argument("league", nargs="?", choices=sorted(BY_KEY), help="league to open (default: last used)")
     p.add_argument("--color", choices=["truecolor", "256", "16"],
                    help="color mode (overrides the saved option)")
+    p.add_argument("--symbols", choices=SYMBOL_SETS,
+                   help="symbol set: full Unicode, console-safe or ascii (overrides the saved option)")
     p.add_argument("--delay", type=int, metavar="SECONDS",
                    help="stream delay in seconds (saved as the new default)")
     args = p.parse_args(argv)
@@ -30,6 +32,7 @@ def main(argv=None):
     save_settings()
     mode = args.color or (settings["color"] if settings["color"] != "auto" else detect_color_mode())
     colors = Colors(mode)
+    set_symbols(args.symbols or settings["symbols"])
     logos = LogoStore()
     menu = OptionsMenu(colors)
 

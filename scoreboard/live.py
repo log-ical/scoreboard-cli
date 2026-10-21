@@ -6,6 +6,7 @@ is a block of equal-width lines, the last one a caption naming the style.
 
 import math
 
+from . import term
 from .term import BOLD, DIM, RESET
 
 STYLES = {
@@ -18,6 +19,15 @@ MIN_WIDTH, MAX_WIDTH = 36, 72
 # view and both teams in the vertical layout.
 YELLOW, RED, BLUE = "\x1b[33m", "\x1b[31m", "\x1b[94m"
 SHOTS_SHOWN = 10   # the NBA shot chart's most recent shots
+# Markers per symbol set (see term.py): limited fonts draw ◦ and ● alike.
+MARKS = {
+    "full": {"shot": "◦", "goal": "●", "made": "●", "missed": "○", "ball": "●", "basket": "◯"},
+    "plain": {"shot": "+", "goal": "@", "made": "O", "missed": "x", "ball": "@", "basket": "U"},
+}
+
+
+def marks():
+    return MARKS["full" if term.symbols == "full" else "plain"]
 
 
 def style_of(league, chosen):
@@ -168,7 +178,7 @@ def _ball(grid, g, col, y, teams):
     grid.put(x + (1 if side == "away" else -1), y, "▶" if side == "away" else "◀", teams.fg[side])
     if first is not None:   # over the arrow when it's that close
         grid.put(col(first + 10), y, "┃", YELLOW + BOLD)
-    grid.put(x, y, "●", teams.fg[side] + BOLD)
+    grid.put(x, y, marks()["ball"], teams.fg[side] + BOLD)
 
 
 # --------------------------------------------------------------------------
@@ -250,12 +260,13 @@ def shot_chart(plays, w, teams, label):
         x, y = 25 + 23.75 * math.cos(a), 23.75 * math.sin(a)
         if y >= 8.9:
             grid.put(col(x), row(y), "·", DIM)
-    grid.put(col(25), 0, "◯", BOLD)
+    m = marks()
+    grid.put(col(25), 0, m["basket"], BOLD)
     shots = [p.shot for p in plays if p.shot][-SHOTS_SHOWN:]
     for i, (x, y, side, made) in enumerate(shots):
         newest = BOLD if i == len(shots) - 1 else ""
-        grid.put(col(x), min(h - 1, max(1, row(y))), "●" if made else "○", teams.fg[side] + newest)
-    key = "● made ○ missed  " + teams.fg["away"] + "■" + RESET + " %s " % teams.abbrev["away"] \
+        grid.put(col(x), min(h - 1, max(1, row(y))), m["made"] if made else m["missed"], teams.fg[side] + newest)
+    key = "%s made %s missed  " % (m["made"], m["missed"]) + teams.fg["away"] + "■" + RESET + " %s " % teams.abbrev["away"] \
         + teams.fg["home"] + "■" + RESET + " %s" % teams.abbrev["home"]
     n = 19 + len(teams.abbrev["away"]) + len(teams.abbrev["home"]) + 3
     return grid.lines() + [caption(w, key, label, n)]
@@ -305,10 +316,11 @@ def shot_map(g, w, teams, label):
         grid.put(col(x), row(y), "·", DIM)
     grid.put(col(-89), row(0), "▌", DIM)
     grid.put(col(89), row(0), "▐", DIM)
+    m = marks()
     for x, y, side, goal in g.rink:
-        grid.put(col(x), min(h - 2, max(1, row(y))), "●" if goal else "◦", teams.fg[side] + (BOLD if goal else ""))
+        grid.put(col(x), min(h - 2, max(1, row(y))), m["goal"] if goal else m["shot"], teams.fg[side] + (BOLD if goal else ""))
     counts, n = _shot_counts(g, teams)
-    legend = "◦ shot ● goal   " + counts
+    legend = "%s shot %s goal   " % (m["shot"], m["goal"]) + counts
     return grid.lines() + [caption(w, legend, label, 16 + n), _last_event(g, w)]
 
 
@@ -328,7 +340,7 @@ def zone_strip(g, w, teams, label):
         grid.text(x0 + max(0, (x1 - x0 - len(name)) // 2), 0, name[:max(0, x1 - x0)], DIM)
     if g.rink_last:
         _, x, side = g.rink_last
-        grid.put(min(w - 2, max(1, col(x))), 1, "●", teams.fg[side] + BOLD)
+        grid.put(min(w - 2, max(1, col(x))), 1, marks()["goal"], teams.fg[side] + BOLD)
     counts, n = _shot_counts(g, teams)
     return grid.lines() + [_last_event(g, w, zone=True), caption(w, DIM + "shots this period: " + RESET + counts,
                                                                  label, 19 + n)]
