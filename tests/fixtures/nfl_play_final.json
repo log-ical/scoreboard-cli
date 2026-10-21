@@ -1,0 +1,76 @@
+{
+ "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873008/competitions/401873008/plays/4018730084222?lang=en&region=us",
+ "id": "4018730084222",
+ "sequenceNumber": "422200",
+ "type": {
+  "id": "66",
+  "text": "End of Game",
+  "abbreviation": "EG"
+ },
+ "text": "END GAME",
+ "shortText": "End Game ",
+ "alternativeText": "END GAME",
+ "shortAlternativeText": "End Game ",
+ "awayScore": 17,
+ "homeScore": 23,
+ "period": {
+  "number": 4
+ },
+ "clock": {
+  "value": 0.0,
+  "displayValue": "0:00"
+ },
+ "scoringPlay": false,
+ "priority": false,
+ "scoreValue": 0,
+ "modified": "2026-10-20T03:29Z",
+ "team": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/teams/28?lang=en&region=us"
+ },
+ "probability": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873008/competitions/401873008/probabilities/4018730084222?lang=en&region=us"
+ },
+ "wallclock": "2026-10-20T03:21:03Z",
+ "teamParticipants": [
+  {
+   "team": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/teams/28?lang=en&region=us"
+   },
+   "id": "28",
+   "order": 1,
+   "type": "offense"
+  },
+  {
+   "team": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/teams/25?lang=en&region=us"
+   },
+   "id": "25",
+   "order": 2,
+   "type": "defense"
+  }
+ ],
+ "isPenalty": false,
+ "statYardage": 0,
+ "drive": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873008/competitions/401873008/drives/40187300819?lang=en&region=us"
+ },
+ "start": {
+  "down": 0,
+  "distance": 0,
+  "yardLine": 58,
+  "yardsToEndzone": 0,
+  "team": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/teams/28?lang=en&region=us"
+  }
+ },
+ "end": {
+  "down": 0,
+  "distance": 40,
+  "yardLine": 58,
+  "yardsToEndzone": 58,
+  "team": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/teams/28?lang=en&region=us"
+  }
+ },
+ "isTurnover": false
+}

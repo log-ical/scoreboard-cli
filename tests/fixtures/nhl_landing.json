@@ -1,0 +1,927 @@
+{
+ "id": 2026020141,
+ "season": 20262027,
+ "gameType": 2,
+ "limitedScoring": false,
+ "gameDate": "2026-10-20",
+ "venue": {
+  "default": "Centre Bell"
+ },
+ "venueLocation": {
+  "default": "Montreal",
+  "fr": "Montr\u00e9al"
+ },
+ "startTimeUTC": "2026-10-20T23:00:00Z",
+ "easternUTCOffset": "-04:00",
+ "venueUTCOffset": "-04:00",
+ "venueTimezone": "America/Montreal",
+ "periodDescriptor": {
+  "number": 4,
+  "periodType": "OT",
+  "maxRegulationPeriods": 3
+ },
+ "tvBroadcasts": [
+  {
+   "id": 131,
+   "market": "H",
+   "countryCode": "CA",
+   "network": "TSN2",
+   "sequenceNumber": 112
+  },
+  {
+   "id": 33,
+   "market": "H",
+   "countryCode": "CA",
+   "network": "RDS",
+   "sequenceNumber": 145
+  },
+  {
+   "id": 314,
+   "market": "A",
+   "countryCode": "US",
+   "network": "NBCSCA",
+   "sequenceNumber": 393
+  }
+ ],
+ "gameState": "OFF",
+ "gameScheduleState": "OK",
+ "awayTeam": {
+  "id": 28,
+  "commonName": {
+   "default": "Sharks"
+  },
+  "abbrev": "SJS",
+  "placeName": {
+   "default": "San Jose"
+  },
+  "placeNameWithPreposition": {
+   "default": "San Jose",
+   "fr": "de San Jose"
+  },
+  "score": 4,
+  "sog": 30,
+  "logo": "https://assets.nhle.com/logos/nhl/svg/SJS_light.svg",
+  "darkLogo": "https://assets.nhle.com/logos/nhl/svg/SJS_dark.svg"
+ },
+ "homeTeam": {
+  "id": 8,
+  "commonName": {
+   "default": "Canadiens"
+  },
+  "abbrev": "MTL",
+  "placeName": {
+   "default": "Montr\u00e9al"
+  },
+  "placeNameWithPreposition": {
+   "default": "Montr\u00e9al",
+   "fr": "de Montr\u00e9al"
+  },
+  "score": 3,
+  "sog": 34,
+  "logo": "https://assets.nhle.com/logos/nhl/svg/MTL_light.svg",
+  "darkLogo": "https://assets.nhle.com/logos/nhl/svg/MTL_dark.svg"
+ },
+ "shootoutInUse": true,
+ "maxPeriods": 5,
+ "regPeriods": 3,
+ "otInUse": true,
+ "tiesInUse": false,
+ "summary": {
+  "scoring": [
+   {
+    "periodDescriptor": {
+     "number": 1,
+     "periodType": "REG",
+     "maxRegulationPeriods": 3
+    },
+    "goals": [
+     {
+      "situationCode": "1551",
+      "eventId": 277,
+      "strength": "ev",
+      "playerId": 8484801,
+      "firstName": {
+       "default": "Macklin"
+      },
+      "lastName": {
+       "default": "Celebrini"
+      },
+      "name": {
+       "default": "M. Celebrini"
+      },
+      "teamAbbrev": {
+       "default": "SJS"
+      },
+      "headshot": "https://assets.nhle.com/mugs/nhl/20262027/SJS/8484801.png",
+      "highlightClipSharingUrl": "https://nhl.com/video/sjs-mtl-celebrini-scores-goal-against-jakub-dobes-6407155471112",
+      "highlightClipSharingUrlFr": "https://nhl.com/fr/video/sjs-mtl-celebrini-marque-un-but-contre-jakub-dobes-6407155376112",
+      "highlightClip": 6407155471112,
+      "highlightClipFr": 6407155376112,
+      "discreteClip": 6407155742112,
+      "discreteClipFr": 6407155252112,
+      "goalsToDate": 4,
+      "awayScore": 1,
+      "homeScore": 0,
+      "leadingTeamAbbrev": {
+       "default": "SJS"
+      },
+      "timeInPeriod": "13:49",
+      "shotType": "snap",
+      "goalModifier": "none",
+      "assists": [],
+      "pptReplayUrl": "https://wsr.nhle.com/sprites/20262027/2026020141/ev277.json",
+      "homeTeamDefendingSide": "right",
+      "isHome": false
+     },
+     {
+      "situationCode": "1551",
+      "eventId": 371,
+      "strength": "ev",
+      "playerId": 8480018,
+      "firstName": {
+       "default": "Nick"
+      },
+      "lastName": {
+       "default": "Suzuki"
+      },
+      "name": {
+       "default": "N. Suzuki"
+      },
+      "teamAbbrev": {
+       "default": "MTL"
+      },
+      "headshot": "https://assets.nhle.com/mugs/nhl/20262027/MTL/8480018.png",
+      "highlightClipSharingUrl": "https://nhl.com/video/sjs-mtl-suzuki-scores-goal-against-alex-nedeljkovic-6407157511112",
+      "highlightClipSharingUrlFr": "https://nhl.com/fr/video/sjs-mtl-suzuki-marque-un-but-contre-alex-nedeljkovic-6407157715112",
+      "highlightClip": 6407157511112,
+      "highlightClipFr": 6407157715112,
+      "discreteClip": 6407156245112,
+      "discreteClipFr": 6407156336112,
+      "goalsToDate": 5,
+      "awayScore": 1,
+      "homeScore": 1,
+      "timeInPeriod": "16:38",
+      "shotType": "snap",
+      "goalModifier": "none",
+      "assists": [
+       {
+        "playerId": 8483515,
+        "firstName": {
+         "default": "Juraj"
+        },
+        "lastName": {
+         "default": "Slafkovsk\u00fd"
+        },
+        "name": {
+         "default": "J. Slafkovsk\u00fd"
+        },
+        "assistsToDate": 5,
+        "sweaterNumber": 20
+       },
+       {
+        "playerId": 8483457,
+        "firstName": {
+         "default": "Lane"
+        },
+        "lastName": {
+         "default": "Hutson"
+        },
+        "name": {
+         "default": "L. Hutson"
+        },
+        "assistsToDate": 7,
+        "sweaterNumber": 48
+       }
+      ],
+      "pptReplayUrl": "https://wsr.nhle.com/sprites/20262027/2026020141/ev371.json",
+      "homeTeamDefendingSide": "right",
+      "isHome": true
+     }
+    ]
+   },
+   {
+    "periodDescriptor": {
+     "number": 2,
+     "periodType": "REG",
+     "maxRegulationPeriods": 3
+    },
+    "goals": [
+     {
+      "situationCode": "1551",
+      "eventId": 495,
+      "strength": "ev",
+      "playerId": 8483515,
+      "firstName": {
+       "default": "Juraj"
+      },
+      "lastName": {
+       "default": "Slafkovsk\u00fd"
+      },
+      "name": {
+       "default": "J. Slafkovsk\u00fd"
+      },
+      "teamAbbrev": {
+       "default": "MTL"
+      },
+      "headshot": "https://assets.nhle.com/mugs/nhl/20262027/MTL/8483515.png",
+      "highlightClipSharingUrl": "https://nhl.com/video/sjs-mtl-slafkovsky-scores-goal-against-alex-nedeljkovic-6407158326112",
+      "highlightClipSharingUrlFr": "https://nhl.com/fr/video/sjs-mtl-slafkovsky-marque-un-but-contre-alex-nedeljkovic-6407155985112",
+      "highlightClip": 6407158326112,
+      "highlightClipFr": 6407155985112,
+      "discreteClip": 6407157284112,
+      "discreteClipFr": 6407156273112,
+      "goalsToDate": 2,
+      "awayScore": 1,
+      "homeScore": 2,
+      "leadingTeamAbbrev": {
+       "default": "MTL"
+      },
+      "timeInPeriod": "01:49",
+      "shotType": "snap",
+      "goalModifier": "none",
+      "assists": [
+       {
+        "playerId": 8481540,
+        "firstName": {
+         "default": "Cole"
+        },
+        "lastName": {
+         "default": "Caufield"
+        },
+        "name": {
+         "default": "C. Caufield"
+        },
+        "assistsToDate": 2,
+        "sweaterNumber": 13
+       }
+      ],
+      "pptReplayUrl": "https://wsr.nhle.com/sprites/20262027/2026020141/ev495.json",
+      "homeTeamDefendingSide": "left",
+      "isHome": true
+     },
+     {
+      "situationCode": "1551",
+      "eventId": 667,
+      "strength": "ev",
+      "playerId": 8481540,
+      "firstName": {
+       "default": "Cole"
+      },
+      "lastName": {
+       "default": "Caufield"
+      },
+      "name": {
+       "default": "C. Caufield"
+      },
+      "teamAbbrev": {
+       "default": "MTL"
+      },
+      "headshot": "https://assets.nhle.com/mugs/nhl/20262027/MTL/8481540.png",
+      "highlightClipSharingUrl": "https://nhl.com/video/sjs-mtl-caufield-scores-goal-against-alex-nedeljkovic-6407159543112",
+      "highlightClipSharingUrlFr": "https://nhl.com/fr/video/sjs-mtl-caufield-marque-un-but-contre-alex-nedeljkovic-6407158277112",
+      "highlightClip": 6407159543112,
+      "highlightClipFr": 6407158277112,
+      "discreteClip": 6407158742112,
+      "discreteClipFr": 6407159542112,
+      "goalsToDate": 6,
+      "awayScore": 1,
+      "homeScore": 3,
+      "leadingTeamAbbrev": {
+       "default": "MTL"
+      },
+      "timeInPeriod": "14:03",
+      "shotType": "snap",
+      "goalModifier": "none",
+      "assists": [
+       {
+        "playerId": 8480018,
+        "firstName": {
+         "default": "Nick"
+        },
+        "lastName": {
+         "default": "Suzuki"
+        },
+        "name": {
+         "default": "N. Suzuki"
+        },
+        "assistsToDate": 7,
+        "sweaterNumber": 14
+       },
+       {
+        "playerId": 8476479,
+        "firstName": {
+         "default": "Phillip"
+        },
+        "lastName": {
+         "default": "Danault"
+        },
+        "name": {
+         "default": "P. Danault"
+        },
+        "assistsToDate": 2,
+        "sweaterNumber": 24
+       }
+      ],
+      "pptReplayUrl": "https://wsr.nhle.com/sprites/20262027/2026020141/ev667.json",
+      "homeTeamDefendingSide": "left",
+      "isHome": true
+     }
+    ]
+   },
+   {
+    "periodDescriptor": {
+     "number": 3,
+     "periodType": "REG",
+     "maxRegulationPeriods": 3
+    },
+    "goals": [
+     {
+      "situationCode": "1551",
+      "eventId": 834,
+      "strength": "ev",
+      "playerId": 8485402,
+      "firstName": {
+       "default": "Michael"
+      },
+      "lastName": {
+       "default": "Misa"
+      },
+      "name": {
+       "default": "M. Misa"
+      },
+      "teamAbbrev": {
+       "default": "SJS"
+      },
+      "headshot": "https://assets.nhle.com/mugs/nhl/20262027/SJS/8485402.png",
+      "highlightClipSharingUrl": "https://nhl.com/video/sjs-mtl-misa-scores-goal-against-jakub-dobes-6407160281112",
+      "highlightClipSharingUrlFr": "https://nhl.com/fr/video/sjs-mtl-misa-marque-un-but-contre-jakub-dobes-6407159613112",
+      "highlightClip": 6407160281112,
+      "highlightClipFr": 6407159613112,
+      "discreteClip": 6407160362112,
+      "discreteClipFr": 6407160553112,
+      "goalsToDate": 1,
+      "awayScore": 2,
+      "homeScore": 3,
+      "leadingTeamAbbrev": {
+       "default": "MTL"
+      },
+      "timeInPeriod": "05:36",
+      "shotType": "snap",
+      "goalModifier": "none",
+      "assists": [
+       {
+        "playerId": 8480748,
+        "firstName": {
+         "default": "Kiefer"
+        },
+        "lastName": {
+         "default": "Sherwood"
+        },
+        "name": {
+         "default": "K. Sherwood"
+        },
+        "assistsToDate": 2,
+        "sweaterNumber": 44
+       }
+      ],
+      "pptReplayUrl": "https://wsr.nhle.com/sprites/20262027/2026020141/ev834.json",
+      "homeTeamDefendingSide": "right",
+      "isHome": false
+     },
+     {
+      "situationCode": "1541",
+      "eventId": 911,
+      "strength": "pp",
+      "playerId": 8475726,
+      "firstName": {
+       "default": "Tyler"
+      },
+      "lastName": {
+       "default": "Toffoli"
+      },
+      "name": {
+       "default": "T. Toffoli"
+      },
+      "teamAbbrev": {
+       "default": "SJS"
+      },
+      "headshot": "https://assets.nhle.com/mugs/nhl/20262027/SJS/8475726.png",
+      "highlightClipSharingUrl": "https://nhl.com/video/sjs-mtl-toffoli-scores-ppg-against-jakub-dobes-6407159504112",
+      "highlightClipSharingUrlFr": "https://nhl.com/fr/video/sjs-mtl-toffoli-marque-un-but-en-a-n-contre-jakub-dobes-6407160684112",
+      "highlightClip": 6407159504112,
+      "highlightClipFr": 6407160684112,
+      "discreteClip": 6407161543112,
+      "discreteClipFr": 6407159905112,
+      "goalsToDate": 3,
+      "awayScore": 3,
+      "homeScore": 3,
+      "timeInPeriod": "11:09",
+      "shotType": "snap",
+      "goalModifier": "none",
+      "assists": [
+       {
+        "playerId": 8484801,
+        "firstName": {
+         "default": "Macklin"
+        },
+        "lastName": {
+         "default": "Celebrini"
+        },
+        "name": {
+         "default": "M. Celebrini"
+        },
+        "assistsToDate": 9,
+        "sweaterNumber": 71
+       },
+       {
+        "playerId": 8476885,
+        "firstName": {
+         "default": "Jacob"
+        },
+        "lastName": {
+         "default": "Trouba"
+        },
+        "name": {
+         "default": "J. Trouba"
+        },
+        "assistsToDate": 3,
+        "sweaterNumber": 65
+       }
+      ],
+      "pptReplayUrl": "https://wsr.nhle.com/sprites/20262027/2026020141/ev911.json",
+      "homeTeamDefendingSide": "right",
+      "isHome": false
+     }
+    ]
+   },
+   {
+    "periodDescriptor": {
+     "number": 4,
+     "periodType": "OT",
+     "maxRegulationPeriods": 3
+    },
+    "goals": [
+     {
+      "situationCode": "1431",
+      "eventId": 1103,
+      "strength": "pp",
+      "playerId": 8484801,
+      "firstName": {
+       "default": "Macklin"
+      },
+      "lastName": {
+       "default": "Celebrini"
+      },
+      "name": {
+       "default": "M. Celebrini"
+      },
+      "teamAbbrev": {
+       "default": "SJS"
+      },
+      "headshot": "https://assets.nhle.com/mugs/nhl/20262027/SJS/8484801.png",
+      "highlightClipSharingUrl": "https://nhl.com/video/sjs-mtl-celebrini-scores-ppg-against-jakub-dobes-6407161490112",
+      "highlightClipSharingUrlFr": "https://nhl.com/fr/video/sjs-mtl-celebrini-marque-un-but-en-a-n-contre-jakub-dobes-6407162168112",
+      "highlightClip": 6407161490112,
+      "highlightClipFr": 6407162168112,
+      "discreteClip": 6407160912112,
+      "discreteClipFr": 6407162364112,
+      "goalsToDate": 5,
+      "goalInGame": 2,
+      "awayScore": 4,
+      "homeScore": 3,
+      "leadingTeamAbbrev": {
+       "default": "SJS"
+      },
+      "timeInPeriod": "02:13",
+      "shotType": "snap",
+      "goalModifier": "none",
+      "assists": [
+       {
+        "playerId": 8486103,
+        "firstName": {
+         "default": "Ivar"
+        },
+        "lastName": {
+         "default": "Stenberg"
+        },
+        "name": {
+         "default": "I. Stenberg"
+        },
+        "assistsToDate": 5,
+        "sweaterNumber": 41
+       },
+       {
+        "playerId": 8484227,
+        "firstName": {
+         "default": "Will"
+        },
+        "lastName": {
+         "default": "Smith"
+        },
+        "name": {
+         "default": "W. Smith"
+        },
+        "assistsToDate": 4,
+        "sweaterNumber": 2
+       }
+      ],
+      "pptReplayUrl": "https://wsr.nhle.com/sprites/20262027/2026020141/ev1103.json",
+      "homeTeamDefendingSide": "left",
+      "isHome": false
+     }
+    ]
+   }
+  ],
+  "threeStars": [
+   {
+    "star": 1,
+    "playerId": 8484801,
+    "teamAbbrev": "SJS",
+    "headshot": "https://assets.nhle.com/mugs/nhl/20262027/SJS/8484801.png",
+    "name": {
+     "default": "M. Celebrini"
+    },
+    "sweaterNo": 71,
+    "position": "C",
+    "goals": 2,
+    "assists": 1,
+    "points": 3
+   },
+   {
+    "star": 2,
+    "playerId": 8483515,
+    "teamAbbrev": "MTL",
+    "headshot": "https://assets.nhle.com/mugs/nhl/20262027/MTL/8483515.png",
+    "name": {
+     "default": "J. Slafkovsk\u00fd"
+    },
+    "sweaterNo": 20,
+    "position": "L",
+    "goals": 1,
+    "assists": 1,
+    "points": 2
+   },
+   {
+    "star": 3,
+    "playerId": 8484227,
+    "teamAbbrev": "SJS",
+    "headshot": "https://assets.nhle.com/mugs/nhl/20262027/SJS/8484227.png",
+    "name": {
+     "default": "W. Smith"
+    },
+    "sweaterNo": 2,
+    "position": "C",
+    "goals": 0,
+    "assists": 1,
+    "points": 1
+   }
+  ],
+  "penalties": [
+   {
+    "periodDescriptor": {
+     "number": 1,
+     "periodType": "REG",
+     "maxRegulationPeriods": 3
+    },
+    "penalties": [
+     {
+      "timeInPeriod": "10:45",
+      "type": "MIN",
+      "duration": 2,
+      "committedByPlayer": {
+       "firstName": {
+        "default": "Ty"
+       },
+       "lastName": {
+        "default": "Dellandrea"
+       },
+       "sweaterNumber": 10
+      },
+      "teamAbbrev": {
+       "default": "SJS"
+      },
+      "drawnBy": {
+       "firstName": {
+        "default": "Jake"
+       },
+       "lastName": {
+        "default": "Evans"
+       },
+       "sweaterNumber": 71
+      },
+      "descKey": "holding-the-stick"
+     },
+     {
+      "timeInPeriod": "17:22",
+      "type": "MIN",
+      "duration": 2,
+      "committedByPlayer": {
+       "firstName": {
+        "default": "Michael"
+       },
+       "lastName": {
+        "default": "Misa"
+       },
+       "sweaterNumber": 77
+      },
+      "teamAbbrev": {
+       "default": "SJS"
+      },
+      "drawnBy": {
+       "firstName": {
+        "default": "Phillip"
+       },
+       "lastName": {
+        "default": "Danault"
+       },
+       "sweaterNumber": 24
+      },
+      "descKey": "holding"
+     }
+    ]
+   },
+   {
+    "periodDescriptor": {
+     "number": 2,
+     "periodType": "REG",
+     "maxRegulationPeriods": 3
+    },
+    "penalties": [
+     {
+      "timeInPeriod": "11:57",
+      "type": "MIN",
+      "duration": 2,
+      "committedByPlayer": {
+       "firstName": {
+        "default": "Juraj"
+       },
+       "lastName": {
+        "default": "Slafkovsk\u00fd"
+       },
+       "sweaterNumber": 20
+      },
+      "teamAbbrev": {
+       "default": "MTL"
+      },
+      "drawnBy": {
+       "firstName": {
+        "default": "Barclay"
+       },
+       "lastName": {
+        "default": "Goodrow"
+       },
+       "sweaterNumber": 23
+      },
+      "descKey": "roughing"
+     },
+     {
+      "timeInPeriod": "11:57",
+      "type": "MIN",
+      "duration": 2,
+      "committedByPlayer": {
+       "firstName": {
+        "default": "Barclay"
+       },
+       "lastName": {
+        "default": "Goodrow"
+       },
+       "sweaterNumber": 23
+      },
+      "teamAbbrev": {
+       "default": "SJS"
+      },
+      "drawnBy": {
+       "firstName": {
+        "default": "Juraj"
+       },
+       "lastName": {
+        "default": "Slafkovsk\u00fd"
+       },
+       "sweaterNumber": 20
+      },
+      "descKey": "roughing"
+     },
+     {
+      "timeInPeriod": "11:57",
+      "type": "MIN",
+      "duration": 2,
+      "committedByPlayer": {
+       "firstName": {
+        "default": "Kaiden"
+       },
+       "lastName": {
+        "default": "Guhle"
+       },
+       "sweaterNumber": 21
+      },
+      "teamAbbrev": {
+       "default": "MTL"
+      },
+      "drawnBy": {
+       "firstName": {
+        "default": "Zack"
+       },
+       "lastName": {
+        "default": "Ostapchuk"
+       },
+       "sweaterNumber": 63
+      },
+      "descKey": "roughing"
+     },
+     {
+      "timeInPeriod": "11:57",
+      "type": "MIN",
+      "duration": 2,
+      "committedByPlayer": {
+       "firstName": {
+        "default": "Zack"
+       },
+       "lastName": {
+        "default": "Ostapchuk"
+       },
+       "sweaterNumber": 63
+      },
+      "teamAbbrev": {
+       "default": "SJS"
+      },
+      "drawnBy": {
+       "firstName": {
+        "default": "Kaiden"
+       },
+       "lastName": {
+        "default": "Guhle"
+       },
+       "sweaterNumber": 21
+      },
+      "descKey": "roughing"
+     },
+     {
+      "timeInPeriod": "17:27",
+      "type": "MIN",
+      "duration": 2,
+      "committedByPlayer": {
+       "firstName": {
+        "default": "Alexandre"
+       },
+       "lastName": {
+        "default": "Texier"
+       },
+       "sweaterNumber": 85
+      },
+      "teamAbbrev": {
+       "default": "MTL"
+      },
+      "drawnBy": {
+       "firstName": {
+        "default": "Ivar"
+       },
+       "lastName": {
+        "default": "Stenberg"
+       },
+       "sweaterNumber": 41
+      },
+      "descKey": "high-sticking"
+     }
+    ]
+   },
+   {
+    "periodDescriptor": {
+     "number": 3,
+     "periodType": "REG",
+     "maxRegulationPeriods": 3
+    },
+    "penalties": [
+     {
+      "timeInPeriod": "09:33",
+      "type": "MIN",
+      "duration": 2,
+      "committedByPlayer": {
+       "firstName": {
+        "default": "Arber"
+       },
+       "lastName": {
+        "default": "Xhekaj"
+       },
+       "sweaterNumber": 72
+      },
+      "teamAbbrev": {
+       "default": "MTL"
+      },
+      "drawnBy": {
+       "firstName": {
+        "default": "Michael"
+       },
+       "lastName": {
+        "default": "Kesselring"
+       },
+       "sweaterNumber": 7
+      },
+      "descKey": "unsportsmanlike-conduct",
+      "servedBy": {
+       "default": "C. Kreider"
+      }
+     },
+     {
+      "timeInPeriod": "09:33",
+      "type": "MIN",
+      "duration": 2,
+      "committedByPlayer": {
+       "firstName": {
+        "default": "Michael"
+       },
+       "lastName": {
+        "default": "Kesselring"
+       },
+       "sweaterNumber": 7
+      },
+      "teamAbbrev": {
+       "default": "SJS"
+      },
+      "drawnBy": {
+       "firstName": {
+        "default": "Arber"
+       },
+       "lastName": {
+        "default": "Xhekaj"
+       },
+       "sweaterNumber": 72
+      },
+      "descKey": "roughing"
+     },
+     {
+      "timeInPeriod": "09:33",
+      "type": "MIN",
+      "duration": 2,
+      "committedByPlayer": {
+       "firstName": {
+        "default": "Arber"
+       },
+       "lastName": {
+        "default": "Xhekaj"
+       },
+       "sweaterNumber": 72
+      },
+      "teamAbbrev": {
+       "default": "MTL"
+      },
+      "drawnBy": {
+       "firstName": {
+        "default": "Michael"
+       },
+       "lastName": {
+        "default": "Kesselring"
+       },
+       "sweaterNumber": 7
+      },
+      "descKey": "roughing"
+     }
+    ]
+   },
+   {
+    "periodDescriptor": {
+     "number": 4,
+     "periodType": "OT",
+     "maxRegulationPeriods": 3
+    },
+    "penalties": [
+     {
+      "timeInPeriod": "01:53",
+      "type": "MIN",
+      "duration": 2,
+      "committedByPlayer": {
+       "firstName": {
+        "default": "Jakub"
+       },
+       "lastName": {
+        "default": "Dobes"
+       },
+       "sweaterNumber": 75
+      },
+      "teamAbbrev": {
+       "default": "MTL"
+      },
+      "drawnBy": {
+       "firstName": {
+        "default": "Collin"
+       },
+       "lastName": {
+        "default": "Graf"
+       },
+       "sweaterNumber": 51
+      },
+      "descKey": "interference",
+      "servedBy": {
+       "default": "A. Newhook"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "clock": {
+  "timeRemaining": "02:47",
+  "secondsRemaining": 167,
+  "running": false,
+  "inIntermission": false
+ }
+}

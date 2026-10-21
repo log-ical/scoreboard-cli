@@ -1,0 +1,59 @@
+{
+ "$ref": "http://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/events/401909090/competitions/401909090/plays/401909090702?lang=en&region=us",
+ "id": "401909090702",
+ "sequenceNumber": "702",
+ "type": {
+  "id": "43",
+  "text": "Loose Ball Foul"
+ },
+ "text": "Isaiah Hartenstein loose ball foul",
+ "shortText": "I. Hartenstein loose ball foul",
+ "alternativeText": "Isaiah Hartenstein loose ball foul",
+ "shortAlternativeText": "I. Hartenstein loose ball foul",
+ "awayScore": 102,
+ "homeScore": 90,
+ "period": {
+  "number": 4,
+  "displayValue": "4th Quarter"
+ },
+ "clock": {
+  "value": 396.0,
+  "displayValue": "6:36"
+ },
+ "valid": true,
+ "scoringPlay": false,
+ "priority": false,
+ "scoreValue": 0,
+ "modified": "2026-10-21T04:06Z",
+ "team": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/seasons/2027/teams/25?lang=en&region=us"
+ },
+ "participants": [
+  {
+   "athlete": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/seasons/2027/athletes/4222252?lang=en&region=us"
+   },
+   "position": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/positions/9?lang=en&region=us"
+   },
+   "statistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/events/401909090/competitions/401909090/competitors/25/roster/4222252/statistics/0?lang=en&region=us"
+   },
+   "order": 1,
+   "type": "fouler"
+  }
+ ],
+ "probability": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/events/401909090/competitions/401909090/probabilities/401909090702?lang=en&region=us"
+ },
+ "wallclock": "2026-10-21T04:05:47Z",
+ "shootingPlay": false,
+ "possessionTeam": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/seasons/2027/teams/24?lang=en&region=us"
+ },
+ "coordinate": {
+  "x": 26,
+  "y": 7
+ },
+ "pointsAttempted": 0
+}

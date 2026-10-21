@@ -1,0 +1,3775 @@
+{
+ "events": [
+  {
+   "id": "401909088",
+   "uid": "s:40~l:46~e:401909088",
+   "date": "2026-10-20T19:00Z",
+   "name": "Boston Celtics at Detroit Pistons",
+   "shortName": "BOS @ DET",
+   "season": {
+    "year": 2027,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "401909088",
+     "uid": "s:40~l:46~e:401909088~c:401909088",
+     "date": "2026-10-20T19:00Z",
+     "attendance": 20178,
+     "type": {
+      "id": "1",
+      "abbreviation": "STD"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "conferenceCompetition": false,
+     "playByPlayAvailable": true,
+     "recent": false,
+     "venue": {
+      "id": "5404",
+      "fullName": "Little Caesars Arena",
+      "address": {
+       "city": "Detroit",
+       "state": "MI"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "8",
+       "uid": "s:40~l:46~t:8",
+       "type": "team",
+       "order": 0,
+       "homeAway": "home",
+       "winner": true,
+       "team": {
+        "id": "8",
+        "uid": "s:40~l:46~t:8",
+        "location": "Detroit",
+        "name": "Pistons",
+        "abbreviation": "DET",
+        "displayName": "Detroit Pistons",
+        "shortDisplayName": "Pistons",
+        "color": "1d428a",
+        "alternateColor": "c8102e",
+        "isActive": true,
+        "venue": {
+         "id": "5311"
+        },
+        "links": [
+         {
+          "rel": [
+           "clubhouse",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nba/team/_/name/det/detroit-pistons",
+          "text": "Clubhouse",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nba/team/roster/_/name/det/detroit-pistons",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:40~l:46~t:8&section=roster",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nba/team/stats/_/name/det/detroit-pistons",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:40~l:46~t:8&section=stats",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nba/team/schedule/_/name/det",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:40~l:46~t:8&section=scores",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         }
+        ],
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/det.png",
+        "logoDark": "https://a.espncdn.com/i/teamlogos/nba/500-dark/scoreboard/det.png"
+       },
+       "score": "121",
+       "linescores": [
+        {
+         "value": 27.0,
+         "displayValue": "27",
+         "period": 1
+        },
+        {
+         "value": 18.0,
+         "displayValue": "18",
+         "period": 2
+        },
+        {
+         "value": 37.0,
+         "displayValue": "37",
+         "period": 3
+        },
+        {
+         "value": 39.0,
+         "displayValue": "39",
+         "period": 4
+        }
+       ],
+       "statistics": [
+        {
+         "name": "rebounds",
+         "abbreviation": "REB",
+         "displayValue": "49"
+        },
+        {
+         "name": "avgRebounds",
+         "abbreviation": "REB",
+         "displayValue": "49.0"
+        },
+        {
+         "name": "assists",
+         "abbreviation": "AST",
+         "displayValue": "27"
+        },
+        {
+         "name": "fieldGoalsAttempted",
+         "abbreviation": "FGA",
+         "displayValue": "86"
+        },
+        {
+         "name": "fieldGoalsMade",
+         "abbreviation": "FGM",
+         "displayValue": "39"
+        },
+        {
+         "name": "fieldGoalPct",
+         "abbreviation": "FG%",
+         "displayValue": "45.3"
+        },
+        {
+         "name": "freeThrowPct",
+         "abbreviation": "FT%",
+         "displayValue": "87.5"
+        },
+        {
+         "name": "freeThrowsAttempted",
+         "abbreviation": "FTA",
+         "displayValue": "32"
+        },
+        {
+         "name": "freeThrowsMade",
+         "abbreviation": "FTM",
+         "displayValue": "28"
+        },
+        {
+         "name": "points",
+         "abbreviation": "PTS",
+         "displayValue": "121"
+        },
+        {
+         "name": "threePointPct",
+         "abbreviation": "3P%",
+         "displayValue": "37.5"
+        },
+        {
+         "name": "threePointFieldGoalsAttempted",
+         "abbreviation": "3PA",
+         "displayValue": "40"
+        },
+        {
+         "name": "threePointFieldGoalsMade",
+         "abbreviation": "3PM",
+         "displayValue": "15"
+        },
+        {
+         "name": "avgPoints",
+         "abbreviation": "PTS",
+         "displayValue": "121.0"
+        },
+        {
+         "name": "avgAssists",
+         "abbreviation": "AST",
+         "displayValue": "27.0"
+        },
+        {
+         "name": "threePointFieldGoalPct",
+         "abbreviation": "3P%",
+         "displayValue": "37.5"
+        }
+       ],
+       "leaders": [
+        {
+         "name": "points",
+         "displayName": "Points",
+         "shortDisplayName": "Pts",
+         "abbreviation": "Pts",
+         "leaders": [
+          {
+           "displayValue": "22",
+           "value": 22.0,
+           "athlete": {
+            "id": "4433621",
+            "fullName": "Jalen Duren",
+            "displayName": "Jalen Duren",
+            "shortName": "J. Duren",
+            "links": [
+             {
+              "rel": [
+               "playercard",
+               "desktop",
+               "athlete"
+              ],
+              "href": "https://www.espn.com/nba/player/_/id/4433621/jalen-duren"
+             }
+            ],
+            "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/4433621.png",
+            "jersey": "0",
+            "position": {
+             "abbreviation": "C"
+            },
+            "team": {
+             "id": "8"
+            },
+            "active": true
+           },
+           "team": {
+            "id": "8"
+           }
+          }
+         ]
+        },
+        {
+         "name": "rebounds",
+         "displayName": "Rebounds",
+         "shortDisplayName": "Reb",
+         "abbreviation": "Reb",
+         "leaders": [
+          {
+           "displayValue": "11",
+           "value": 11.0,
+           "athlete": {
+            "id": "4684742",
+            "fullName": "Ausar Thompson",
+            "displayName": "Ausar Thompson",
+            "shortName": "A. Thompson",
+            "links": [
+             {
+              "rel": [
+               "playercard",
+               "desktop",
+               "athlete"
+              ],
+              "href": "https://www.espn.com/nba/player/_/id/4684742/ausar-thompson"
+             }
+            ],
+            "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/4684742.png",
+            "jersey": "9",
+            "position": {
+             "abbreviation": "G"
+            },
+            "team": {
+             "id": "8"
+            },
+            "active": true
+           },
+           "team": {
+            "id": "8"
+           }
+          }
+         ]
+        },
+        {
+         "name": "assists",
+         "displayName": "Assists",
+         "shortDisplayName": "Ast",
+         "abbreviation": "Ast",
+         "leaders": [
+          {
+           "displayValue": "8",
+           "value": 8.0,
+           "athlete": {
+            "id": "4432166",
+            "fullName": "Cade Cunningham",
+            "displayName": "Cade Cunningham",
+            "shortName": "C. Cunningham",
+            "links": [
+             {
+              "rel": [
+               "playercard",
+               "desktop",
+               "athlete"
+              ],
+              "href": "https://www.espn.com/nba/player/_/id/4432166/cade-cunningham"
+             }
+            ],
+            "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/4432166.png",
+            "jersey": "2",
+            "position": {
+             "abbreviation": "G"
+            },
+            "team": {
+             "id": "8"
+            },
+            "active": true
+           },
+           "team": {
+            "id": "8"
+           }
+          }
+         ]
+        },
+        {
+         "name": "rating",
+         "displayName": "Rating",
+         "shortDisplayName": "RAT",
+         "abbreviation": "RAT",
+         "leaders": [
+          {
+           "displayValue": "22 PTS, 9 REB",
+           "value": 38.79999923706055,
+           "athlete": {
+            "id": "4433621",
+            "fullName": "Jalen Duren",
+            "displayName": "Jalen Duren",
+            "shortName": "J. Duren",
+            "links": [
+             {
+              "rel": [
+               "playercard",
+               "desktop",
+               "athlete"
+              ],
+              "href": "https://www.espn.com/nba/player/_/id/4433621/jalen-duren"
+             }
+            ],
+            "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/4433621.png",
+            "jersey": "0",
+            "position": {
+             "abbreviation": "C"
+            },
+            "team": {
+             "id": "8"
+            },
+            "active": true
+           },
+           "team": {
+            "id": "8"
+           }
+          }
+         ]
+        }
+       ],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Game",
+         "type": "total",
+         "summary": "1-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "1-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      },
+      {
+       "id": "2",
+       "uid": "s:40~l:46~t:2",
+       "type": "team",
+       "order": 1,
+       "homeAway": "away",
+       "winner": false,
+       "team": {
+        "id": "2",
+        "uid": "s:40~l:46~t:2",
+        "location": "Boston",
+        "name": "Celtics",
+        "abbreviation": "BOS",
+        "displayName": "Boston Celtics",
+        "shortDisplayName": "Celtics",
+        "color": "008348",
+        "alternateColor": "ffffff",
+        "isActive": true,
+        "venue": {
+         "id": "1824"
+        },
+        "links": [
+         {
+          "rel": [
+           "clubhouse",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nba/team/_/name/bos/boston-celtics",
+          "text": "Clubhouse",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nba/team/roster/_/name/bos/boston-celtics",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:40~l:46~t:2&section=roster",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nba/team/stats/_/name/bos/boston-celtics",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:40~l:46~t:2&section=stats",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nba/team/schedule/_/name/bos",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:40~l:46~t:2&section=scores",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         }
+        ],
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/bos.png",
+        "logoDark": "https://a.espncdn.com/i/teamlogos/nba/500-dark/scoreboard/bos.png"
+       },
+       "score": "113",
+       "linescores": [
+        {
+         "value": 28.0,
+         "displayValue": "28",
+         "period": 1
+        },
+        {
+         "value": 30.0,
+         "displayValue": "30",
+         "period": 2
+        },
+        {
+         "value": 30.0,
+         "displayValue": "30",
+         "period": 3
+        },
+        {
+         "value": 25.0,
+         "displayValue": "25",
+         "period": 4
+        }
+       ],
+       "statistics": [
+        {
+         "name": "rebounds",
+         "abbreviation": "REB",
+         "displayValue": "39"
+        },
+        {
+         "name": "avgRebounds",
+         "abbreviation": "REB",
+         "displayValue": "39.0"
+        },
+        {
+         "name": "assists",
+         "abbreviation": "AST",
+         "displayValue": "28"
+        },
+        {
+         "name": "fieldGoalsAttempted",
+         "abbreviation": "FGA",
+         "displayValue": "88"
+        },
+        {
+         "name": "fieldGoalsMade",
+         "abbreviation": "FGM",
+         "displayValue": "40"
+        },
+        {
+         "name": "fieldGoalPct",
+         "abbreviation": "FG%",
+         "displayValue": "45.5"
+        },
+        {
+         "name": "freeThrowPct",
+         "abbreviation": "FT%",
+         "displayValue": "76.2"
+        },
+        {
+         "name": "freeThrowsAttempted",
+         "abbreviation": "FTA",
+         "displayValue": "21"
+        },
+        {
+         "name": "freeThrowsMade",
+         "abbreviation": "FTM",
+         "displayValue": "16"
+        },
+        {
+         "name": "points",
+         "abbreviation": "PTS",
+         "displayValue": "113"
+        },
+        {
+         "name": "threePointPct",
+         "abbreviation": "3P%",
+         "displayValue": "40.5"
+        },
+        {
+         "name": "threePointFieldGoalsAttempted",
+         "abbreviation": "3PA",
+         "displayValue": "42"
+        },
+        {
+         "name": "threePointFieldGoalsMade",
+         "abbreviation": "3PM",
+         "displayValue": "17"
+        },
+        {
+         "name": "avgPoints",
+         "abbreviation": "PTS",
+         "displayValue": "113.0"
+        },
+        {
+         "name": "avgAssists",
+         "abbreviation": "AST",
+         "displayValue": "28.0"
+        },
+        {
+         "name": "threePointFieldGoalPct",
+         "abbreviation": "3P%",
+         "displayValue": "40.5"
+        }
+       ],
+       "leaders": [
+        {
+         "name": "points",
+         "displayName": "Points",
+         "shortDisplayName": "Pts",
+         "abbreviation": "Pts",
+         "leaders": [
+          {
+           "displayValue": "38",
+           "value": 38.0,
+           "athlete": {
+            "id": "4251",
+            "fullName": "Paul George",
+            "displayName": "Paul George",
+            "shortName": "P. George",
+            "links": [
+             {
+              "rel": [
+               "playercard",
+               "desktop",
+               "athlete"
+              ],
+              "href": "https://www.espn.com/nba/player/_/id/4251/paul-george"
+             }
+            ],
+            "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/4251.png",
+            "jersey": "13",
+            "position": {
+             "abbreviation": "F"
+            },
+            "team": {
+             "id": "2"
+            },
+            "active": true
+           },
+           "team": {
+            "id": "2"
+           }
+          }
+         ]
+        },
+        {
+         "name": "rebounds",
+         "displayName": "Rebounds",
+         "shortDisplayName": "Reb",
+         "abbreviation": "Reb",
+         "leaders": [
+          {
+           "displayValue": "6",
+           "value": 6.0,
+           "athlete": {
+            "id": "4683689",
+            "fullName": "Jordan Walsh",
+            "displayName": "Jordan Walsh",
+            "shortName": "J. Walsh",
+            "links": [
+             {
+              "rel": [
+               "playercard",
+               "desktop",
+               "athlete"
+              ],
+              "href": "https://www.espn.com/nba/player/_/id/4683689/jordan-walsh"
+             }
+            ],
+            "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/4683689.png",
+            "jersey": "27",
+            "position": {
+             "abbreviation": "G"
+            },
+            "team": {
+             "id": "2"
+            },
+            "active": true
+           },
+           "team": {
+            "id": "2"
+           }
+          }
+         ]
+        },
+        {
+         "name": "assists",
+         "displayName": "Assists",
+         "shortDisplayName": "Ast",
+         "abbreviation": "Ast",
+         "leaders": [
+          {
+           "displayValue": "11",
+           "value": 11.0,
+           "athlete": {
+            "id": "4065648",
+            "fullName": "Jayson Tatum",
+            "displayName": "Jayson Tatum",
+            "shortName": "J. Tatum",
+            "links": [
+             {
+              "rel": [
+               "playercard",
+               "desktop",
+               "athlete"
+              ],
+              "href": "https://www.espn.com/nba/player/_/id/4065648/jayson-tatum"
+             }
+            ],
+            "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/4065648.png",
+            "jersey": "0",
+            "position": {
+             "abbreviation": "F"
+            },
+            "team": {
+             "id": "2"
+            },
+            "active": true
+           },
+           "team": {
+            "id": "2"
+           }
+          }
+         ]
+        },
+        {
+         "name": "rating",
+         "displayName": "Rating",
+         "shortDisplayName": "RAT",
+         "abbreviation": "RAT",
+         "leaders": [
+          {
+           "displayValue": "38 PTS, 5 STL",
+           "value": 59.349998474121094,
+           "athlete": {
+            "id": "4251",
+            "fullName": "Paul George",
+            "displayName": "Paul George",
+            "shortName": "P. George",
+            "links": [
+             {
+              "rel": [
+               "playercard",
+               "desktop",
+               "athlete"
+              ],
+              "href": "https://www.espn.com/nba/player/_/id/4251/paul-george"
+             }
+            ],
+            "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/4251.png",
+            "jersey": "13",
+            "position": {
+             "abbreviation": "F"
+            },
+            "team": {
+             "id": "2"
+            },
+            "active": true
+           },
+           "team": {
+            "id": "2"
+           }
+          }
+         ]
+        }
+       ],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Game",
+         "type": "total",
+         "summary": "0-1"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-1"
+        }
+       ]
+      }
+     ],
+     "notes": [],
+     "status": {
+      "clock": 0.0,
+      "displayClock": "0.0",
+      "period": 4,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      }
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "NBC"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 4
+      }
+     },
+     "startDate": "2026-10-20T19:00Z",
+     "broadcast": "NBC",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "NBC"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": [
+      {
+       "id": 50232313,
+       "cerebroId": "6ad7e4fc5337f73c2d0793ec",
+       "source": "espn",
+       "headline": "Boston Celtics vs. Detroit Pistons: Game Highlights",
+       "description": "Boston Celtics vs. Detroit Pistons: Game Highlights",
+       "lastModified": "2026-10-20T22:07:39Z",
+       "originalPublishDate": "2026-10-20T22:02:37Z",
+       "duration": 74,
+       "timeRestrictions": {
+        "embargoDate": "2026-10-20T22:02:29Z",
+        "expirationDate": "2027-07-31T04:00:00Z"
+       },
+       "deviceRestrictions": {
+        "devices": [
+         "settop",
+         "tablet",
+         "handset",
+         "ipad",
+         "desktop"
+        ],
+        "type": "whitelist"
+       },
+       "geoRestrictions": {
+        "countries": [
+         "PR",
+         "HN",
+         "PY",
+         "HT",
+         "IE",
+         "AG",
+         "ZA",
+         "AI",
+         "AM",
+         "AO",
+         "AR",
+         "AS",
+         "ZM",
+         "RE",
+         "AU",
+         "AW",
+         "ZW",
+         "BB",
+         "JM",
+         "BF",
+         "RW",
+         "BI",
+         "BJ",
+         "BM",
+         "BO",
+         "BQ",
+         "SC",
+         "BR",
+         "BS",
+         "BW",
+         "BZ",
+         "SL",
+         "KE",
+         "SN",
+         "SR",
+         "SS",
+         "ST",
+         "CD",
+         "KM",
+         "CF",
+         "SV",
+         "KN",
+         "CG",
+         "SX",
+         "CI",
+         "SZ",
+         "CL",
+         "CM",
+         "CO",
+         "KY",
+         "TC",
+         "CR",
+         "CU",
+         "CV",
+         "TG",
+         "LC",
+         "TT",
+         "LR",
+         "TZ",
+         "LS",
+         "DO",
+         "UG",
+         "UK",
+         "UM",
+         "MF",
+         "MG",
+         "EC",
+         "US",
+         "ML",
+         "MP",
+         "UY",
+         "MQ",
+         "MS",
+         "MU",
+         "MW",
+         "MX",
+         "VC",
+         "ER",
+         "MZ",
+         "ET",
+         "VE",
+         "VG",
+         "VI",
+         "NA",
+         "NE",
+         "NG",
+         "NI",
+         "NZ",
+         "GA",
+         "GB",
+         "GD",
+         "GF",
+         "GH",
+         "GM",
+         "GN",
+         "GP",
+         "GQ",
+         "GT",
+         "GU",
+         "GW",
+         "PA",
+         "GY",
+         "PE",
+         "PH"
+        ],
+        "type": "whitelist"
+       },
+       "thumbnail": "https://espnmedia-cdn.akamaized.net/espn/media/common/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711.jpg",
+       "links": {
+        "api": {
+         "artwork": {
+          "href": "https://artwork.api.espn.com/artwork/collections/media/74ba327b-8e36-454f-b3f8-1c313d94dd59"
+         },
+         "self": {
+          "href": "https://content.core.api.espn.com/v1/video/clips/50232313"
+         }
+        },
+        "mobile": {
+         "href": "https://watch.auth.api.espn.com/video/auth/brightcove/74ba327b-8e36-454f-b3f8-1c313d94dd59/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50232313/game-highlights",
+         "alert": {
+          "href": "https://m.espn.com/general/video/videoAlert?vid=50232313"
+         },
+         "progressiveDownload": {
+          "href": "https://watch.auth.api.espn.com/video/auth/brightcove/74ba327b-8e36-454f-b3f8-1c313d94dd59/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50232313/game-highlights"
+         },
+         "source": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711.mp4"
+         },
+         "streaming": {
+          "href": "https://watch.auth.api.espn.com/video/auth/brightcove/74ba327b-8e36-454f-b3f8-1c313d94dd59/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50232313/game-highlights"
+         }
+        },
+        "source": {
+         "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711.mp4",
+         "HD": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711.mp4"
+         },
+         "HLS": {
+          "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711/playlist.m3u8",
+          "9x16": {
+           "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/9x16/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711/playlist.m3u8"
+          },
+          "HD": {
+           "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711/playlist.m3u8"
+          },
+          "cmaf": {
+           "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711/playlist.m3u8",
+           "9x16": {
+            "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/9x16/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711/playlist.m3u8"
+           },
+           "cmb": {
+            "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/cmb/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711/playlist.m3u8"
+           }
+          },
+          "cmb": {
+           "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/cmb/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711/playlist.m3u8"
+          },
+          "shield": {
+           "href": "https://watch.auth.api.espn.com/video/auth/media/74ba327b-8e36-454f-b3f8-1c313d94dd59/asset"
+          }
+         },
+         "flash": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711.mp4"
+         },
+         "full": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711.mp4"
+         },
+         "mezzanine": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711.mp4"
+         }
+        },
+        "sportscenter": {
+         "href": "sportscenter://x-callback-url/showVideo?videoID=50232313&videoDSI=c8e5882b5d200"
+        },
+        "web": {
+         "href": "https://www.espn.com/video/clip/_/id/50232313/game-highlights",
+         "self": {
+          "href": "https://www.espn.com/video/clip/_/id/50232313/game-highlights",
+          "dsi": {
+           "href": "https://www.espn.com/video/clip?id=c8e5882b5d200"
+          }
+         }
+        }
+       },
+       "ad": {
+        "bundle": "sportscenter",
+        "sport": "nba"
+       },
+       "tracking": {
+        "coverageType": "Final Game Highlight",
+        "leagueName": "NBA",
+        "program": "NBC",
+        "sportName": "basketball",
+        "trackingId": "dm_20261020_NBA_boston_celtics_vs_detroit_pistons_game_highlights",
+        "trackingName": "COM_NBA Highlight (Boston Celtics vs. Detroit Pistons: Game Highlights) 2026/10/20 ESHEET"
+       }
+      }
+     ],
+     "headlines": [
+      {
+       "type": "Recap",
+       "description": "\u2014 Javonte Green scored 19 points after not playing in the first half and Cade Cunningham finished with 22 points and eight assists, helping the Detroit Pistons come back and beat the ",
+       "shortLinkText": "NBA season tips off with Pistons rallying to beat Celtics 121-113, spoiling Paul George's debut",
+       "video": [
+        {
+         "id": 50232313,
+         "source": "espn",
+         "headline": "Boston Celtics vs. Detroit Pistons: Game Highlights",
+         "thumbnail": "https://espnmedia-cdn.akamaized.net/espn/media/common/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711.jpg",
+         "duration": 74,
+         "tracking": {
+          "coverageType": "Final Game Highlight",
+          "leagueName": "NBA",
+          "program": "NBC",
+          "sportName": "basketball",
+          "trackingId": "dm_20261020_NBA_boston_celtics_vs_detroit_pistons_game_highlights",
+          "trackingName": "COM_NBA Highlight (Boston Celtics vs. Detroit Pistons: Game Highlights) 2026/10/20 ESHEET"
+         },
+         "deviceRestrictions": {
+          "devices": [
+           "settop",
+           "tablet",
+           "handset",
+           "ipad",
+           "desktop"
+          ],
+          "type": "whitelist"
+         },
+         "geoRestrictions": {
+          "countries": [
+           "PR",
+           "HN",
+           "PY",
+           "HT",
+           "IE",
+           "AG",
+           "ZA",
+           "AI",
+           "AM",
+           "AO",
+           "AR",
+           "AS",
+           "ZM",
+           "RE",
+           "AU",
+           "AW",
+           "ZW",
+           "BB",
+           "JM",
+           "BF",
+           "RW",
+           "BI",
+           "BJ",
+           "BM",
+           "BO",
+           "BQ",
+           "SC",
+           "BR",
+           "BS",
+           "BW",
+           "BZ",
+           "SL",
+           "KE",
+           "SN",
+           "SR",
+           "SS",
+           "ST",
+           "CD",
+           "KM",
+           "CF",
+           "SV",
+           "KN",
+           "CG",
+           "SX",
+           "CI",
+           "SZ",
+           "CL",
+           "CM",
+           "CO",
+           "KY",
+           "TC",
+           "CR",
+           "CU",
+           "CV",
+           "TG",
+           "LC",
+           "TT",
+           "LR",
+           "TZ",
+           "LS",
+           "DO",
+           "UG",
+           "UK",
+           "UM",
+           "MF",
+           "MG",
+           "EC",
+           "US",
+           "ML",
+           "MP",
+           "UY",
+           "MQ",
+           "MS",
+           "MU",
+           "MW",
+           "MX",
+           "VC",
+           "ER",
+           "MZ",
+           "ET",
+           "VE",
+           "VG",
+           "VI",
+           "NA",
+           "NE",
+           "NG",
+           "NI",
+           "NZ",
+           "GA",
+           "GB",
+           "GD",
+           "GF",
+           "GH",
+           "GM",
+           "GN",
+           "GP",
+           "GQ",
+           "GT",
+           "GU",
+           "GW",
+           "PA",
+           "GY",
+           "PE",
+           "PH"
+          ],
+          "type": "whitelist"
+         },
+         "links": {
+          "api": {
+           "artwork": {
+            "href": "https://artwork.api.espn.com/artwork/collections/media/74ba327b-8e36-454f-b3f8-1c313d94dd59"
+           },
+           "self": {
+            "href": "https://content.core.api.espn.com/v1/video/clips/50232313"
+           }
+          },
+          "mobile": {
+           "href": "https://watch.auth.api.espn.com/video/auth/brightcove/74ba327b-8e36-454f-b3f8-1c313d94dd59/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50232313/game-highlights",
+           "alert": {
+            "href": "https://m.espn.com/general/video/videoAlert?vid=50232313"
+           },
+           "progressiveDownload": {
+            "href": "https://watch.auth.api.espn.com/video/auth/brightcove/74ba327b-8e36-454f-b3f8-1c313d94dd59/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50232313/game-highlights"
+           },
+           "source": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711.mp4"
+           },
+           "streaming": {
+            "href": "https://watch.auth.api.espn.com/video/auth/brightcove/74ba327b-8e36-454f-b3f8-1c313d94dd59/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50232313/game-highlights"
+           }
+          },
+          "source": {
+           "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711.mp4",
+           "HD": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711.mp4"
+           },
+           "HLS": {
+            "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711/playlist.m3u8",
+            "9x16": {
+             "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/9x16/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711/playlist.m3u8"
+            },
+            "HD": {
+             "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711/playlist.m3u8"
+            },
+            "cmaf": {
+             "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711/playlist.m3u8",
+             "9x16": {
+              "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/9x16/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711/playlist.m3u8"
+             },
+             "cmb": {
+              "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/cmb/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711/playlist.m3u8"
+             }
+            },
+            "cmb": {
+             "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/cmb/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711/playlist.m3u8"
+            },
+            "shield": {
+             "href": "https://watch.auth.api.espn.com/video/auth/media/74ba327b-8e36-454f-b3f8-1c313d94dd59/asset"
+            }
+           },
+           "flash": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711.mp4"
+           },
+           "full": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711.mp4"
+           },
+           "mezzanine": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1020/64082d05-d539-4106-a2bf-3a0223a08711/64082d05-d539-4106-a2bf-3a0223a08711.mp4"
+           }
+          },
+          "sportscenter": {
+           "href": "sportscenter://x-callback-url/showVideo?videoID=50232313&videoDSI=c8e5882b5d200"
+          },
+          "web": {
+           "href": "https://www.espn.com/video/clip/_/id/50232313/game-highlights",
+           "self": {
+            "href": "https://www.espn.com/video/clip/_/id/50232313/game-highlights",
+            "dsi": {
+             "href": "https://www.espn.com/video/clip?id=c8e5882b5d200"
+            }
+           }
+          }
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "links": [
+    {
+     "language": "en-US",
+     "rel": [
+      "summary",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nba/game/_/gameId/401909088/celtics-pistons",
+     "text": "Gamecast",
+     "shortText": "Gamecast",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "boxscore",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nba/boxscore/_/gameId/401909088",
+     "text": "Box Score",
+     "shortText": "Box Score",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "highlights",
+      "desktop"
+     ],
+     "href": "https://www.espn.com/nba/video?gameId=401909088",
+     "text": "Highlights",
+     "shortText": "Highlights",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "pbp",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nba/playbyplay/_/gameId/401909088",
+     "text": "Play-by-Play",
+     "shortText": "Play-by-Play",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "recap",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nba/recap?gameId=401909088",
+     "text": "Recap",
+     "shortText": "Recap",
+     "isExternal": false,
+     "isPremium": false
+    }
+   ],
+   "status": {
+    "clock": 0.0,
+    "displayClock": "0.0",
+    "period": 4,
+    "type": {
+     "id": "3",
+     "name": "STATUS_FINAL",
+     "state": "post",
+     "completed": true,
+     "description": "Final",
+     "detail": "Final",
+     "shortDetail": "Final"
+    }
+   }
+  },
+  {
+   "id": "401909089",
+   "uid": "s:40~l:46~e:401909089",
+   "date": "2026-10-20T23:00Z",
+   "name": "Philadelphia 76ers at New York Knicks",
+   "shortName": "PHI @ NY",
+   "season": {
+    "year": 2027,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "401909089",
+     "uid": "s:40~l:46~e:401909089~c:401909089",
+     "date": "2026-10-20T23:00Z",
+     "attendance": 19812,
+     "type": {
+      "id": "1",
+      "abbreviation": "STD"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "conferenceCompetition": false,
+     "playByPlayAvailable": true,
+     "recent": true,
+     "venue": {
+      "id": "1830",
+      "fullName": "Madison Square Garden",
+      "address": {
+       "city": "New York",
+       "state": "NY"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "18",
+       "uid": "s:40~l:46~t:18",
+       "type": "team",
+       "order": 0,
+       "homeAway": "home",
+       "winner": false,
+       "team": {
+        "id": "18",
+        "uid": "s:40~l:46~t:18",
+        "location": "New York",
+        "name": "Knicks",
+        "abbreviation": "NY",
+        "displayName": "New York Knicks",
+        "shortDisplayName": "Knicks",
+        "color": "1d428a",
+        "alternateColor": "f58426",
+        "isActive": true,
+        "venue": {
+         "id": "1830"
+        },
+        "links": [
+         {
+          "rel": [
+           "clubhouse",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nba/team/_/name/ny/new-york-knicks",
+          "text": "Clubhouse",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nba/team/roster/_/name/ny/new-york-knicks",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:40~l:46~t:18&section=roster",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nba/team/stats/_/name/ny/new-york-knicks",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:40~l:46~t:18&section=stats",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nba/team/schedule/_/name/ny",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:40~l:46~t:18&section=scores",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         }
+        ],
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/ny.png",
+        "logoDark": "https://a.espncdn.com/i/teamlogos/nba/500-dark/scoreboard/ny.png"
+       },
+       "score": "100",
+       "linescores": [
+        {
+         "value": 25.0,
+         "displayValue": "25",
+         "period": 1
+        },
+        {
+         "value": 33.0,
+         "displayValue": "33",
+         "period": 2
+        },
+        {
+         "value": 18.0,
+         "displayValue": "18",
+         "period": 3
+        },
+        {
+         "value": 24.0,
+         "displayValue": "24",
+         "period": 4
+        }
+       ],
+       "statistics": [
+        {
+         "name": "rebounds",
+         "abbreviation": "REB",
+         "displayValue": "53"
+        },
+        {
+         "name": "avgRebounds",
+         "abbreviation": "REB",
+         "displayValue": "53.0"
+        },
+        {
+         "name": "assists",
+         "abbreviation": "AST",
+         "displayValue": "21"
+        },
+        {
+         "name": "fieldGoalsAttempted",
+         "abbreviation": "FGA",
+         "displayValue": "94"
+        },
+        {
+         "name": "fieldGoalsMade",
+         "abbreviation": "FGM",
+         "displayValue": "35"
+        },
+        {
+         "name": "fieldGoalPct",
+         "abbreviation": "FG%",
+         "displayValue": "37.2"
+        },
+        {
+         "name": "freeThrowPct",
+         "abbreviation": "FT%",
+         "displayValue": "70.4"
+        },
+        {
+         "name": "freeThrowsAttempted",
+         "abbreviation": "FTA",
+         "displayValue": "27"
+        },
+        {
+         "name": "freeThrowsMade",
+         "abbreviation": "FTM",
+         "displayValue": "19"
+        },
+        {
+         "name": "points",
+         "abbreviation": "PTS",
+         "displayValue": "100"
+        },
+        {
+         "name": "threePointPct",
+         "abbreviation": "3P%",
+         "displayValue": "33.3"
+        },
+        {
+         "name": "threePointFieldGoalsAttempted",
+         "abbreviation": "3PA",
+         "displayValue": "33"
+        },
+        {
+         "name": "threePointFieldGoalsMade",
+         "abbreviation": "3PM",
+         "displayValue": "11"
+        },
+        {
+         "name": "avgPoints",
+         "abbreviation": "PTS",
+         "displayValue": "100.0"
+        },
+        {
+         "name": "avgAssists",
+         "abbreviation": "AST",
+         "displayValue": "21.0"
+        },
+        {
+         "name": "threePointFieldGoalPct",
+         "abbreviation": "3P%",
+         "displayValue": "33.3"
+        }
+       ],
+       "leaders": [
+        {
+         "name": "points",
+         "displayName": "Points",
+         "shortDisplayName": "Pts",
+         "abbreviation": "Pts",
+         "leaders": [
+          {
+           "displayValue": "21",
+           "value": 21.0,
+           "athlete": {
+            "id": "3934672",
+            "fullName": "Jalen Brunson",
+            "displayName": "Jalen Brunson",
+            "shortName": "J. Brunson",
+            "links": [
+             {
+              "rel": [
+               "playercard",
+               "desktop",
+               "athlete"
+              ],
+              "href": "https://www.espn.com/nba/player/_/id/3934672/jalen-brunson"
+             }
+            ],
+            "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/3934672.png",
+            "jersey": "11",
+            "position": {
+             "abbreviation": "G"
+            },
+            "team": {
+             "id": "18"
+            },
+            "active": true
+           },
+           "team": {
+            "id": "18"
+           }
+          }
+         ]
+        },
+        {
+         "name": "rebounds",
+         "displayName": "Rebounds",
+         "shortDisplayName": "Reb",
+         "abbreviation": "Reb",
+         "leaders": [
+          {
+           "displayValue": "14",
+           "value": 14.0,
+           "athlete": {
+            "id": "6585",
+            "fullName": "Andre Drummond",
+            "displayName": "Andre Drummond",
+            "shortName": "A. Drummond",
+            "links": [
+             {
+              "rel": [
+               "playercard",
+               "desktop",
+               "athlete"
+              ],
+              "href": "https://www.espn.com/nba/player/_/id/6585/andre-drummond"
+             }
+            ],
+            "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/6585.png",
+            "jersey": "0",
+            "position": {
+             "abbreviation": "C"
+            },
+            "team": {
+             "id": "18"
+            },
+            "active": true
+           },
+           "team": {
+            "id": "18"
+           }
+          }
+         ]
+        },
+        {
+         "name": "assists",
+         "displayName": "Assists",
+         "shortDisplayName": "Ast",
+         "abbreviation": "Ast",
+         "leaders": [
+          {
+           "displayValue": "4",
+           "value": 4.0,
+           "athlete": {
+            "id": "6585",
+            "fullName": "Andre Drummond",
+            "displayName": "Andre Drummond",
+            "shortName": "A. Drummond",
+            "links": [
+             {
+              "rel": [
+               "playercard",
+               "desktop",
+               "athlete"
+              ],
+              "href": "https://www.espn.com/nba/player/_/id/6585/andre-drummond"
+             }
+            ],
+            "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/6585.png",
+            "jersey": "0",
+            "position": {
+             "abbreviation": "C"
+            },
+            "team": {
+             "id": "18"
+            },
+            "active": true
+           },
+           "team": {
+            "id": "18"
+           }
+          }
+         ]
+        },
+        {
+         "name": "rating",
+         "displayName": "Rating",
+         "shortDisplayName": "RAT",
+         "abbreviation": "RAT",
+         "leaders": [
+          {
+           "displayValue": "19 PTS, 12 REB",
+           "value": 37.099998474121094,
+           "athlete": {
+            "id": "3136195",
+            "fullName": "Karl-Anthony Towns",
+            "displayName": "Karl-Anthony Towns",
+            "shortName": "K. Towns",
+            "links": [
+             {
+              "rel": [
+               "playercard",
+               "desktop",
+               "athlete"
+              ],
+              "href": "https://www.espn.com/nba/player/_/id/3136195/karl-anthony-towns"
+             }
+            ],
+            "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/3136195.png",
+            "jersey": "32",
+            "position": {
+             "abbreviation": "C"
+            },
+            "team": {
+             "id": "18"
+            },
+            "active": true
+           },
+           "team": {
+            "id": "18"
+           }
+          }
+         ]
+        }
+       ],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Game",
+         "type": "total",
+         "summary": "0-1"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-1"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      },
+      {
+       "id": "20",
+       "uid": "s:40~l:46~t:20",
+       "type": "team",
+       "order": 1,
+       "homeAway": "away",
+       "winner": true,
+       "team": {
+        "id": "20",
+        "uid": "s:40~l:46~t:20",
+        "location": "Philadelphia",
+        "name": "76ers",
+        "abbreviation": "PHI",
+        "displayName": "Philadelphia 76ers",
+        "shortDisplayName": "76ers",
+        "color": "1d428a",
+        "alternateColor": "e01234",
+        "isActive": true,
+        "venue": {
+         "id": "1845"
+        },
+        "links": [
+         {
+          "rel": [
+           "clubhouse",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nba/team/_/name/phi/philadelphia-76ers",
+          "text": "Clubhouse",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nba/team/roster/_/name/phi/philadelphia-76ers",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:40~l:46~t:20&section=roster",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nba/team/stats/_/name/phi/philadelphia-76ers",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:40~l:46~t:20&section=stats",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nba/team/schedule/_/name/phi",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:40~l:46~t:20&section=scores",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         }
+        ],
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/phi.png",
+        "logoDark": "https://a.espncdn.com/i/teamlogos/nba/500-dark/scoreboard/phi.png"
+       },
+       "score": "106",
+       "linescores": [
+        {
+         "value": 23.0,
+         "displayValue": "23",
+         "period": 1
+        },
+        {
+         "value": 31.0,
+         "displayValue": "31",
+         "period": 2
+        },
+        {
+         "value": 29.0,
+         "displayValue": "29",
+         "period": 3
+        },
+        {
+         "value": 23.0,
+         "displayValue": "23",
+         "period": 4
+        }
+       ],
+       "statistics": [
+        {
+         "name": "rebounds",
+         "abbreviation": "REB",
+         "displayValue": "45"
+        },
+        {
+         "name": "avgRebounds",
+         "abbreviation": "REB",
+         "displayValue": "45.0"
+        },
+        {
+         "name": "assists",
+         "abbreviation": "AST",
+         "displayValue": "28"
+        },
+        {
+         "name": "fieldGoalsAttempted",
+         "abbreviation": "FGA",
+         "displayValue": "89"
+        },
+        {
+         "name": "fieldGoalsMade",
+         "abbreviation": "FGM",
+         "displayValue": "37"
+        },
+        {
+         "name": "fieldGoalPct",
+         "abbreviation": "FG%",
+         "displayValue": "41.6"
+        },
+        {
+         "name": "freeThrowPct",
+         "abbreviation": "FT%",
+         "displayValue": "77.8"
+        },
+        {
+         "name": "freeThrowsAttempted",
+         "abbreviation": "FTA",
+         "displayValue": "27"
+        },
+        {
+         "name": "freeThrowsMade",
+         "abbreviation": "FTM",
+         "displayValue": "21"
+        },
+        {
+         "name": "points",
+         "abbreviation": "PTS",
+         "displayValue": "106"
+        },
+        {
+         "name": "threePointPct",
+         "abbreviation": "3P%",
+         "displayValue": "27.5"
+        },
+        {
+         "name": "threePointFieldGoalsAttempted",
+         "abbreviation": "3PA",
+         "displayValue": "40"
+        },
+        {
+         "name": "threePointFieldGoalsMade",
+         "abbreviation": "3PM",
+         "displayValue": "11"
+        },
+        {
+         "name": "avgPoints",
+         "abbreviation": "PTS",
+         "displayValue": "106.0"
+        },
+        {
+         "name": "avgAssists",
+         "abbreviation": "AST",
+         "displayValue": "28.0"
+        },
+        {
+         "name": "threePointFieldGoalPct",
+         "abbreviation": "3P%",
+         "displayValue": "27.5"
+        }
+       ],
+       "leaders": [
+        {
+         "name": "points",
+         "displayName": "Points",
+         "shortDisplayName": "Pts",
+         "abbreviation": "Pts",
+         "leaders": [
+          {
+           "displayValue": "28",
+           "value": 28.0,
+           "athlete": {
+            "id": "4431678",
+            "fullName": "Tyrese Maxey",
+            "displayName": "Tyrese Maxey",
+            "shortName": "T. Maxey",
+            "links": [
+             {
+              "rel": [
+               "playercard",
+               "desktop",
+               "athlete"
+              ],
+              "href": "https://www.espn.com/nba/player/_/id/4431678/tyrese-maxey"
+             }
+            ],
+            "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/4431678.png",
+            "jersey": "0",
+            "position": {
+             "abbreviation": "G"
+            },
+            "team": {
+             "id": "20"
+            },
+            "active": true
+           },
+           "team": {
+            "id": "20"
+           }
+          }
+         ]
+        },
+        {
+         "name": "rebounds",
+         "displayName": "Rebounds",
+         "shortDisplayName": "Reb",
+         "abbreviation": "Reb",
+         "leaders": [
+          {
+           "displayValue": "11",
+           "value": 11.0,
+           "athlete": {
+            "id": "3059318",
+            "fullName": "Joel Embiid",
+            "displayName": "Joel Embiid",
+            "shortName": "J. Embiid",
+            "links": [
+             {
+              "rel": [
+               "playercard",
+               "desktop",
+               "athlete"
+              ],
+              "href": "https://www.espn.com/nba/player/_/id/3059318/joel-embiid"
+             }
+            ],
+            "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/3059318.png",
+            "jersey": "21",
+            "position": {
+             "abbreviation": "C"
+            },
+            "team": {
+             "id": "20"
+            },
+            "active": true
+           },
+           "team": {
+            "id": "20"
+           }
+          }
+         ]
+        },
+        {
+         "name": "assists",
+         "displayName": "Assists",
+         "shortDisplayName": "Ast",
+         "abbreviation": "Ast",
+         "leaders": [
+          {
+           "displayValue": "7",
+           "value": 7.0,
+           "athlete": {
+            "id": "1966",
+            "fullName": "LeBron James",
+            "displayName": "LeBron James",
+            "shortName": "L. James",
+            "links": [
+             {
+              "rel": [
+               "playercard",
+               "desktop",
+               "athlete"
+              ],
+              "href": "https://www.espn.com/nba/player/_/id/1966/lebron-james"
+             }
+            ],
+            "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/1966.png",
+            "jersey": "23",
+            "position": {
+             "abbreviation": "F"
+            },
+            "team": {
+             "id": "20"
+            },
+            "active": true
+           },
+           "team": {
+            "id": "20"
+           }
+          }
+         ]
+        },
+        {
+         "name": "rating",
+         "displayName": "Rating",
+         "shortDisplayName": "RAT",
+         "abbreviation": "RAT",
+         "leaders": [
+          {
+           "displayValue": "28 PTS, 3 STL, 3 BLK",
+           "value": 48.0,
+           "athlete": {
+            "id": "4431678",
+            "fullName": "Tyrese Maxey",
+            "displayName": "Tyrese Maxey",
+            "shortName": "T. Maxey",
+            "links": [
+             {
+              "rel": [
+               "playercard",
+               "desktop",
+               "athlete"
+              ],
+              "href": "https://www.espn.com/nba/player/_/id/4431678/tyrese-maxey"
+             }
+            ],
+            "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/4431678.png",
+            "jersey": "0",
+            "position": {
+             "abbreviation": "G"
+            },
+            "team": {
+             "id": "20"
+            },
+            "active": true
+           },
+           "team": {
+            "id": "20"
+           }
+          }
+         ]
+        }
+       ],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Game",
+         "type": "total",
+         "summary": "1-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "1-0"
+        }
+       ]
+      }
+     ],
+     "notes": [],
+     "status": {
+      "clock": 720.0,
+      "displayClock": "12:00",
+      "period": 4,
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      }
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "NBC"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 4
+      }
+     },
+     "startDate": "2026-10-20T23:00Z",
+     "broadcast": "NBC",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "5",
+        "shortName": "Radio"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "ERADM"
+       },
+       "lang": "en",
+       "region": "us"
+      },
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "NBC"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "headlines": [
+      {
+       "type": "Recap",
+       "description": "\u2014 The Philadelphia 76ers sent an opening-night message they'll be a contender for the New York Knicks' NBA title after adding LeBron James and Jaylen Brown, rallying for a 106-100 victory Tuesday.",
+       "shortLinkText": "76ers win opening game with LeBron James and Jaylen Brown, beating NBA champion Knicks 106-100",
+       "video": [
+        {
+         "id": 50234135,
+         "source": "espn",
+         "headline": "76ers spoil Knicks' ring night with win at the Garden",
+         "thumbnail": "https://espnmedia-cdn.akamaized.net/espn/media/common/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28.jpg",
+         "duration": 74,
+         "tracking": {
+          "coverageType": "Final Game Highlight",
+          "leagueName": "NBA",
+          "program": "NBC",
+          "sportName": "basketball",
+          "trackingId": "dm_20261020_NBA_76ers_spoil_knicks_ring_night_with_win_at_the_garden",
+          "trackingName": "COM_NBA Highlight (76ers spoil Knicks' ring night with win at the Garden) 2026/10/20 ESHEET"
+         },
+         "deviceRestrictions": {
+          "devices": [
+           "settop",
+           "tablet",
+           "handset",
+           "ipad",
+           "desktop"
+          ],
+          "type": "whitelist"
+         },
+         "geoRestrictions": {
+          "countries": [
+           "PR",
+           "HN",
+           "PY",
+           "HT",
+           "IE",
+           "AG",
+           "ZA",
+           "AI",
+           "AM",
+           "AO",
+           "AR",
+           "AS",
+           "ZM",
+           "RE",
+           "AU",
+           "AW",
+           "ZW",
+           "BB",
+           "JM",
+           "BF",
+           "RW",
+           "BI",
+           "BJ",
+           "BM",
+           "BO",
+           "BQ",
+           "BR",
+           "SC",
+           "BS",
+           "BW",
+           "BZ",
+           "SL",
+           "KE",
+           "SN",
+           "SR",
+           "SS",
+           "ST",
+           "CD",
+           "KM",
+           "CF",
+           "KN",
+           "SV",
+           "CG",
+           "SX",
+           "CI",
+           "SZ",
+           "CL",
+           "CM",
+           "CO",
+           "KY",
+           "TC",
+           "CR",
+           "CU",
+           "CV",
+           "TG",
+           "LC",
+           "TT",
+           "LR",
+           "TZ",
+           "LS",
+           "DO",
+           "UG",
+           "UK",
+           "UM",
+           "MF",
+           "MG",
+           "EC",
+           "US",
+           "ML",
+           "MP",
+           "MQ",
+           "UY",
+           "MS",
+           "MU",
+           "MW",
+           "MX",
+           "VC",
+           "MZ",
+           "ER",
+           "VE",
+           "ET",
+           "VG",
+           "VI",
+           "NA",
+           "NE",
+           "NG",
+           "NI",
+           "NZ",
+           "GA",
+           "GB",
+           "GD",
+           "GF",
+           "GH",
+           "GM",
+           "GN",
+           "GP",
+           "GQ",
+           "GT",
+           "GU",
+           "GW",
+           "PA",
+           "GY",
+           "PE",
+           "PH"
+          ],
+          "type": "whitelist"
+         },
+         "links": {
+          "api": {
+           "artwork": {
+            "href": "https://artwork.api.espn.com/artwork/collections/media/c36f6ca9-dbc4-4034-aa14-d7db63dedc1e"
+           },
+           "self": {
+            "href": "https://content.core.api.espn.com/v1/video/clips/50234135"
+           }
+          },
+          "mobile": {
+           "href": "https://watch.auth.api.espn.com/video/auth/brightcove/c36f6ca9-dbc4-4034-aa14-d7db63dedc1e/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50234135/76ers-spoil-knicks-ring-night-win-garden",
+           "alert": {
+            "href": "https://m.espn.com/general/video/videoAlert?vid=50234135"
+           },
+           "progressiveDownload": {
+            "href": "https://watch.auth.api.espn.com/video/auth/brightcove/c36f6ca9-dbc4-4034-aa14-d7db63dedc1e/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50234135/76ers-spoil-knicks-ring-night-win-garden"
+           },
+           "source": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28.mp4"
+           },
+           "streaming": {
+            "href": "https://watch.auth.api.espn.com/video/auth/brightcove/c36f6ca9-dbc4-4034-aa14-d7db63dedc1e/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50234135/76ers-spoil-knicks-ring-night-win-garden"
+           }
+          },
+          "source": {
+           "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28.mp4",
+           "HD": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28.mp4"
+           },
+           "HLS": {
+            "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/playlist.m3u8",
+            "9x16": {
+             "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/9x16/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/playlist.m3u8"
+            },
+            "HD": {
+             "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/playlist.m3u8"
+            },
+            "cmaf": {
+             "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/playlist.m3u8",
+             "9x16": {
+              "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/9x16/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/playlist.m3u8"
+             },
+             "cmb": {
+              "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/cmb/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/playlist.m3u8"
+             }
+            },
+            "cmb": {
+             "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/cmb/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/playlist.m3u8"
+            },
+            "shield": {
+             "href": "https://watch.auth.api.espn.com/video/auth/media/c36f6ca9-dbc4-4034-aa14-d7db63dedc1e/asset"
+            }
+           },
+           "flash": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28.mp4"
+           },
+           "full": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28.mp4"
+           },
+           "mezzanine": {
+            "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28.mp4"
+           }
+          },
+          "sportscenter": {
+           "href": "sportscenter://x-callback-url/showVideo?videoID=50234135&videoDSI=983152070d00c"
+          },
+          "web": {
+           "href": "https://www.espn.com/video/clip/_/id/50234135/76ers-spoil-knicks-ring-night-win-garden",
+           "self": {
+            "href": "https://www.espn.com/video/clip/_/id/50234135/76ers-spoil-knicks-ring-night-win-garden",
+            "dsi": {
+             "href": "https://www.espn.com/video/clip?id=983152070d00c"
+            }
+           }
+          }
+         }
+        }
+       ]
+      }
+     ],
+     "highlights": [
+      {
+       "id": 50234135,
+       "cerebroId": "6ad8206c5b1c8b13e0521618",
+       "source": "espn",
+       "headline": "76ers spoil Knicks' ring night with win at the Garden",
+       "description": "76ers spoil Knicks' ring night with win at the Garden",
+       "lastModified": "2026-10-21T02:19:15Z",
+       "originalPublishDate": "2026-10-21T02:16:12Z",
+       "duration": 74,
+       "timeRestrictions": {
+        "embargoDate": "2026-10-21T02:16:03Z",
+        "expirationDate": "2027-07-31T04:00:00Z"
+       },
+       "deviceRestrictions": {
+        "devices": [
+         "settop",
+         "tablet",
+         "handset",
+         "ipad",
+         "desktop"
+        ],
+        "type": "whitelist"
+       },
+       "geoRestrictions": {
+        "countries": [
+         "PR",
+         "HN",
+         "PY",
+         "HT",
+         "IE",
+         "AG",
+         "ZA",
+         "AI",
+         "AM",
+         "AO",
+         "AR",
+         "AS",
+         "ZM",
+         "RE",
+         "AU",
+         "AW",
+         "ZW",
+         "BB",
+         "JM",
+         "BF",
+         "RW",
+         "BI",
+         "BJ",
+         "BM",
+         "BO",
+         "BQ",
+         "BR",
+         "SC",
+         "BS",
+         "BW",
+         "BZ",
+         "SL",
+         "KE",
+         "SN",
+         "SR",
+         "SS",
+         "ST",
+         "CD",
+         "KM",
+         "CF",
+         "KN",
+         "SV",
+         "CG",
+         "SX",
+         "CI",
+         "SZ",
+         "CL",
+         "CM",
+         "CO",
+         "KY",
+         "TC",
+         "CR",
+         "CU",
+         "CV",
+         "TG",
+         "LC",
+         "TT",
+         "LR",
+         "TZ",
+         "LS",
+         "DO",
+         "UG",
+         "UK",
+         "UM",
+         "MF",
+         "MG",
+         "EC",
+         "US",
+         "ML",
+         "MP",
+         "MQ",
+         "UY",
+         "MS",
+         "MU",
+         "MW",
+         "MX",
+         "VC",
+         "MZ",
+         "ER",
+         "VE",
+         "ET",
+         "VG",
+         "VI",
+         "NA",
+         "NE",
+         "NG",
+         "NI",
+         "NZ",
+         "GA",
+         "GB",
+         "GD",
+         "GF",
+         "GH",
+         "GM",
+         "GN",
+         "GP",
+         "GQ",
+         "GT",
+         "GU",
+         "GW",
+         "PA",
+         "GY",
+         "PE",
+         "PH"
+        ],
+        "type": "whitelist"
+       },
+       "thumbnail": "https://espnmedia-cdn.akamaized.net/espn/media/common/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28.jpg",
+       "links": {
+        "api": {
+         "artwork": {
+          "href": "https://artwork.api.espn.com/artwork/collections/media/c36f6ca9-dbc4-4034-aa14-d7db63dedc1e"
+         },
+         "self": {
+          "href": "https://content.core.api.espn.com/v1/video/clips/50234135"
+         }
+        },
+        "mobile": {
+         "href": "https://watch.auth.api.espn.com/video/auth/brightcove/c36f6ca9-dbc4-4034-aa14-d7db63dedc1e/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50234135/76ers-spoil-knicks-ring-night-win-garden",
+         "alert": {
+          "href": "https://m.espn.com/general/video/videoAlert?vid=50234135"
+         },
+         "progressiveDownload": {
+          "href": "https://watch.auth.api.espn.com/video/auth/brightcove/c36f6ca9-dbc4-4034-aa14-d7db63dedc1e/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50234135/76ers-spoil-knicks-ring-night-win-garden"
+         },
+         "source": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28.mp4"
+         },
+         "streaming": {
+          "href": "https://watch.auth.api.espn.com/video/auth/brightcove/c36f6ca9-dbc4-4034-aa14-d7db63dedc1e/asset?UMADPARAMreferer=https://www.espn.com/video/clip/_/id/50234135/76ers-spoil-knicks-ring-night-win-garden"
+         }
+        },
+        "source": {
+         "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28.mp4",
+         "HD": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28.mp4"
+         },
+         "HLS": {
+          "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/playlist.m3u8",
+          "9x16": {
+           "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/9x16/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/playlist.m3u8"
+          },
+          "HD": {
+           "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/playlist.m3u8"
+          },
+          "cmaf": {
+           "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/playlist.m3u8",
+           "9x16": {
+            "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/9x16/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/playlist.m3u8"
+           },
+           "cmb": {
+            "href": "https://cmp-espn.media.dssott.com/opp/cmaf/espn/cmb/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/playlist.m3u8"
+           }
+          },
+          "cmb": {
+           "href": "https://cmp-espn.media.dssott.com/opp/hls/espn/cmb/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/playlist.m3u8"
+          },
+          "shield": {
+           "href": "https://watch.auth.api.espn.com/video/auth/media/c36f6ca9-dbc4-4034-aa14-d7db63dedc1e/asset"
+          }
+         },
+         "flash": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28.mp4"
+         },
+         "full": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28.mp4"
+         },
+         "mezzanine": {
+          "href": "https://espnmedia-cdn.akamaized.net/espn/media/16x9/wsc/2026/1021/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28/e1bb6fe2-937e-45f3-b7f9-bf342c4ecf28.mp4"
+         }
+        },
+        "sportscenter": {
+         "href": "sportscenter://x-callback-url/showVideo?videoID=50234135&videoDSI=983152070d00c"
+        },
+        "web": {
+         "href": "https://www.espn.com/video/clip/_/id/50234135/76ers-spoil-knicks-ring-night-win-garden",
+         "self": {
+          "href": "https://www.espn.com/video/clip/_/id/50234135/76ers-spoil-knicks-ring-night-win-garden",
+          "dsi": {
+           "href": "https://www.espn.com/video/clip?id=983152070d00c"
+          }
+         }
+        }
+       },
+       "ad": {
+        "bundle": "nba_top_plays",
+        "sport": "nba"
+       },
+       "tracking": {
+        "coverageType": "Final Game Highlight",
+        "leagueName": "NBA",
+        "program": "NBC",
+        "sportName": "basketball",
+        "trackingId": "dm_20261020_NBA_76ers_spoil_knicks_ring_night_with_win_at_the_garden",
+        "trackingName": "COM_NBA Highlight (76ers spoil Knicks' ring night with win at the Garden) 2026/10/20 ESHEET"
+       }
+      }
+     ]
+    }
+   ],
+   "links": [
+    {
+     "language": "en-US",
+     "rel": [
+      "summary",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nba/game/_/gameId/401909089/76ers-knicks",
+     "text": "Gamecast",
+     "shortText": "Gamecast",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "boxscore",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nba/boxscore/_/gameId/401909089",
+     "text": "Box Score",
+     "shortText": "Box Score",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "highlights",
+      "desktop"
+     ],
+     "href": "https://www.espn.com/nba/video?gameId=401909089",
+     "text": "Highlights",
+     "shortText": "Highlights",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "pbp",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nba/playbyplay/_/gameId/401909089",
+     "text": "Play-by-Play",
+     "shortText": "Play-by-Play",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "recap",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nba/recap?gameId=401909089",
+     "text": "Recap",
+     "shortText": "Recap",
+     "isExternal": false,
+     "isPremium": false
+    }
+   ],
+   "status": {
+    "clock": 720.0,
+    "displayClock": "12:00",
+    "period": 4,
+    "type": {
+     "id": "3",
+     "name": "STATUS_FINAL",
+     "state": "post",
+     "completed": true,
+     "description": "Final",
+     "detail": "Final",
+     "shortDetail": "Final"
+    }
+   }
+  },
+  {
+   "id": "401909090",
+   "uid": "s:40~l:46~e:401909090",
+   "date": "2026-10-21T01:50Z",
+   "name": "Oklahoma City Thunder at San Antonio Spurs",
+   "shortName": "OKC @ SA",
+   "season": {
+    "year": 2027,
+    "type": 2,
+    "slug": "regular-season"
+   },
+   "competitions": [
+    {
+     "id": "401909090",
+     "uid": "s:40~l:46~e:401909090~c:401909090",
+     "date": "2026-10-21T01:50Z",
+     "attendance": 19160,
+     "type": {
+      "id": "1",
+      "abbreviation": "STD"
+     },
+     "timeValid": true,
+     "neutralSite": false,
+     "conferenceCompetition": false,
+     "playByPlayAvailable": true,
+     "recent": true,
+     "venue": {
+      "id": "780",
+      "fullName": "Frost Bank Center",
+      "address": {
+       "city": "San Antonio",
+       "state": "TX"
+      },
+      "indoor": true
+     },
+     "competitors": [
+      {
+       "id": "24",
+       "uid": "s:40~l:46~t:24",
+       "type": "team",
+       "order": 0,
+       "homeAway": "home",
+       "team": {
+        "id": "24",
+        "uid": "s:40~l:46~t:24",
+        "location": "San Antonio",
+        "name": "Spurs",
+        "abbreviation": "SA",
+        "displayName": "San Antonio Spurs",
+        "shortDisplayName": "Spurs",
+        "color": "000000",
+        "alternateColor": "c4ced4",
+        "isActive": true,
+        "venue": {
+         "id": "780"
+        },
+        "links": [
+         {
+          "rel": [
+           "clubhouse",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nba/team/_/name/sa/san-antonio-spurs",
+          "text": "Clubhouse",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nba/team/roster/_/name/sa/san-antonio-spurs",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:40~l:46~t:24&section=roster",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nba/team/stats/_/name/sa/san-antonio-spurs",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:40~l:46~t:24&section=stats",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nba/team/schedule/_/name/sa",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:40~l:46~t:24&section=scores",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         }
+        ],
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/sa.png",
+        "logoDark": "https://a.espncdn.com/i/teamlogos/nba/500-dark/scoreboard/sa.png"
+       },
+       "score": "90",
+       "linescores": [
+        {
+         "value": 28.0,
+         "displayValue": "28",
+         "period": 1
+        },
+        {
+         "value": 16.0,
+         "displayValue": "16",
+         "period": 2
+        },
+        {
+         "value": 36.0,
+         "displayValue": "36",
+         "period": 3
+        },
+        {
+         "value": 10.0,
+         "displayValue": "10",
+         "period": 4
+        }
+       ],
+       "statistics": [
+        {
+         "name": "rebounds",
+         "abbreviation": "REB",
+         "displayValue": "39"
+        },
+        {
+         "name": "avgRebounds",
+         "abbreviation": "REB",
+         "displayValue": "39.0"
+        },
+        {
+         "name": "assists",
+         "abbreviation": "AST",
+         "displayValue": "18"
+        },
+        {
+         "name": "fieldGoalsAttempted",
+         "abbreviation": "FGA",
+         "displayValue": "80"
+        },
+        {
+         "name": "fieldGoalsMade",
+         "abbreviation": "FGM",
+         "displayValue": "32"
+        },
+        {
+         "name": "fieldGoalPct",
+         "abbreviation": "FG%",
+         "displayValue": "40.0"
+        },
+        {
+         "name": "freeThrowPct",
+         "abbreviation": "FT%",
+         "displayValue": "85.7"
+        },
+        {
+         "name": "freeThrowsAttempted",
+         "abbreviation": "FTA",
+         "displayValue": "21"
+        },
+        {
+         "name": "freeThrowsMade",
+         "abbreviation": "FTM",
+         "displayValue": "18"
+        },
+        {
+         "name": "points",
+         "abbreviation": "PTS",
+         "displayValue": "90"
+        },
+        {
+         "name": "threePointPct",
+         "abbreviation": "3P%",
+         "displayValue": "25.0"
+        },
+        {
+         "name": "threePointFieldGoalsAttempted",
+         "abbreviation": "3PA",
+         "displayValue": "32"
+        },
+        {
+         "name": "threePointFieldGoalsMade",
+         "abbreviation": "3PM",
+         "displayValue": "8"
+        },
+        {
+         "name": "avgPoints",
+         "abbreviation": "PTS",
+         "displayValue": "90.0"
+        },
+        {
+         "name": "avgAssists",
+         "abbreviation": "AST",
+         "displayValue": "18.0"
+        },
+        {
+         "name": "threePointFieldGoalPct",
+         "abbreviation": "3P%",
+         "displayValue": "25.0"
+        }
+       ],
+       "leaders": [
+        {
+         "name": "points",
+         "displayName": "Points",
+         "shortDisplayName": "Pts",
+         "abbreviation": "Pts",
+         "leaders": [
+          {
+           "displayValue": "18",
+           "value": 18.0,
+           "athlete": {
+            "id": "4845367",
+            "fullName": "Stephon Castle",
+            "displayName": "Stephon Castle",
+            "shortName": "S. Castle",
+            "links": [
+             {
+              "rel": [
+               "playercard",
+               "desktop",
+               "athlete"
+              ],
+              "href": "https://www.espn.com/nba/player/_/id/4845367/stephon-castle"
+             }
+            ],
+            "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/4845367.png",
+            "jersey": "5",
+            "position": {
+             "abbreviation": "G"
+            },
+            "team": {
+             "id": "24"
+            },
+            "active": true
+           },
+           "team": {
+            "id": "24"
+           }
+          }
+         ]
+        },
+        {
+         "name": "rebounds",
+         "displayName": "Rebounds",
+         "shortDisplayName": "Reb",
+         "abbreviation": "Reb",
+         "leaders": [
+          {
+           "displayValue": "13",
+           "value": 13.0,
+           "athlete": {
+            "id": "5104157",
+            "fullName": "Victor Wembanyama",
+            "displayName": "Victor Wembanyama",
+            "shortName": "V. Wembanyama",
+            "links": [
+             {
+              "rel": [
+               "playercard",
+               "desktop",
+               "athlete"
+              ],
+              "href": "https://www.espn.com/nba/player/_/id/5104157/victor-wembanyama"
+             }
+            ],
+            "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/5104157.png",
+            "jersey": "1",
+            "position": {
+             "abbreviation": "F"
+            },
+            "team": {
+             "id": "24"
+            },
+            "active": true
+           },
+           "team": {
+            "id": "24"
+           }
+          }
+         ]
+        },
+        {
+         "name": "assists",
+         "displayName": "Assists",
+         "shortDisplayName": "Ast",
+         "abbreviation": "Ast",
+         "leaders": [
+          {
+           "displayValue": "6",
+           "value": 6.0,
+           "athlete": {
+            "id": "4066259",
+            "fullName": "De'Aaron Fox",
+            "displayName": "De'Aaron Fox",
+            "shortName": "D. Fox",
+            "links": [
+             {
+              "rel": [
+               "playercard",
+               "desktop",
+               "athlete"
+              ],
+              "href": "https://www.espn.com/nba/player/_/id/4066259/deaaron-fox"
+             }
+            ],
+            "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/4066259.png",
+            "jersey": "4",
+            "position": {
+             "abbreviation": "G"
+            },
+            "team": {
+             "id": "24"
+            },
+            "active": true
+           },
+           "team": {
+            "id": "24"
+           }
+          }
+         ]
+        },
+        {
+         "name": "rating",
+         "displayName": "Rating",
+         "shortDisplayName": "RAT",
+         "abbreviation": "RAT",
+         "leaders": [
+          {
+           "displayValue": "14 PTS, 6 REB, 6 AST",
+           "value": 31.299999237060547,
+           "athlete": {
+            "id": "4066259",
+            "fullName": "De'Aaron Fox",
+            "displayName": "De'Aaron Fox",
+            "shortName": "D. Fox",
+            "links": [
+             {
+              "rel": [
+               "playercard",
+               "desktop",
+               "athlete"
+              ],
+              "href": "https://www.espn.com/nba/player/_/id/4066259/deaaron-fox"
+             }
+            ],
+            "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/4066259.png",
+            "jersey": "4",
+            "position": {
+             "abbreviation": "G"
+            },
+            "team": {
+             "id": "24"
+            },
+            "active": true
+           },
+           "team": {
+            "id": "24"
+           }
+          }
+         ]
+        }
+       ],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Total",
+         "type": "total",
+         "summary": "0-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      },
+      {
+       "id": "25",
+       "uid": "s:40~l:46~t:25",
+       "type": "team",
+       "order": 1,
+       "homeAway": "away",
+       "team": {
+        "id": "25",
+        "uid": "s:40~l:46~t:25",
+        "location": "Oklahoma City",
+        "name": "Thunder",
+        "abbreviation": "OKC",
+        "displayName": "Oklahoma City Thunder",
+        "shortDisplayName": "Thunder",
+        "color": "007ac1",
+        "alternateColor": "ef3b24",
+        "isActive": true,
+        "venue": {
+         "id": "2559"
+        },
+        "links": [
+         {
+          "rel": [
+           "clubhouse",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nba/team/_/name/okc/oklahoma-city-thunder",
+          "text": "Clubhouse",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nba/team/roster/_/name/okc/oklahoma-city-thunder",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "roster",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:40~l:46~t:25&section=roster",
+          "text": "Roster",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nba/team/stats/_/name/okc/oklahoma-city-thunder",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "stats",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:40~l:46~t:25&section=stats",
+          "text": "Statistics",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "desktop",
+           "team"
+          ],
+          "href": "https://www.espn.com/nba/team/schedule/_/name/okc",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         },
+         {
+          "rel": [
+           "schedule",
+           "sportscenter",
+           "app",
+           "team"
+          ],
+          "href": "sportscenter://x-callback-url/showClubhouse?uid=s:40~l:46~t:25&section=scores",
+          "text": "Schedule",
+          "isExternal": false,
+          "isPremium": false
+         }
+        ],
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/scoreboard/okc.png",
+        "logoDark": "https://a.espncdn.com/i/teamlogos/nba/500-dark/scoreboard/okc.png"
+       },
+       "score": "102",
+       "linescores": [
+        {
+         "value": 34.0,
+         "displayValue": "34",
+         "period": 1
+        },
+        {
+         "value": 31.0,
+         "displayValue": "31",
+         "period": 2
+        },
+        {
+         "value": 28.0,
+         "displayValue": "28",
+         "period": 3
+        },
+        {
+         "value": 9.0,
+         "displayValue": "9",
+         "period": 4
+        }
+       ],
+       "statistics": [
+        {
+         "name": "rebounds",
+         "abbreviation": "REB",
+         "displayValue": "41"
+        },
+        {
+         "name": "avgRebounds",
+         "abbreviation": "REB",
+         "displayValue": "41.0"
+        },
+        {
+         "name": "assists",
+         "abbreviation": "AST",
+         "displayValue": "22"
+        },
+        {
+         "name": "fieldGoalsAttempted",
+         "abbreviation": "FGA",
+         "displayValue": "83"
+        },
+        {
+         "name": "fieldGoalsMade",
+         "abbreviation": "FGM",
+         "displayValue": "37"
+        },
+        {
+         "name": "fieldGoalPct",
+         "abbreviation": "FG%",
+         "displayValue": "44.6"
+        },
+        {
+         "name": "freeThrowPct",
+         "abbreviation": "FT%",
+         "displayValue": "83.3"
+        },
+        {
+         "name": "freeThrowsAttempted",
+         "abbreviation": "FTA",
+         "displayValue": "18"
+        },
+        {
+         "name": "freeThrowsMade",
+         "abbreviation": "FTM",
+         "displayValue": "15"
+        },
+        {
+         "name": "points",
+         "abbreviation": "PTS",
+         "displayValue": "102"
+        },
+        {
+         "name": "threePointPct",
+         "abbreviation": "3P%",
+         "displayValue": "50.0"
+        },
+        {
+         "name": "threePointFieldGoalsAttempted",
+         "abbreviation": "3PA",
+         "displayValue": "26"
+        },
+        {
+         "name": "threePointFieldGoalsMade",
+         "abbreviation": "3PM",
+         "displayValue": "13"
+        },
+        {
+         "name": "avgPoints",
+         "abbreviation": "PTS",
+         "displayValue": "102.0"
+        },
+        {
+         "name": "avgAssists",
+         "abbreviation": "AST",
+         "displayValue": "22.0"
+        },
+        {
+         "name": "threePointFieldGoalPct",
+         "abbreviation": "3P%",
+         "displayValue": "50.0"
+        }
+       ],
+       "leaders": [
+        {
+         "name": "points",
+         "displayName": "Points",
+         "shortDisplayName": "Pts",
+         "abbreviation": "Pts",
+         "leaders": [
+          {
+           "displayValue": "30",
+           "value": 30.0,
+           "athlete": {
+            "id": "4278073",
+            "fullName": "Shai Gilgeous-Alexander",
+            "displayName": "Shai Gilgeous-Alexander",
+            "shortName": "S. Gilgeous-Alexander",
+            "links": [
+             {
+              "rel": [
+               "playercard",
+               "desktop",
+               "athlete"
+              ],
+              "href": "https://www.espn.com/nba/player/_/id/4278073/shai-gilgeous-alexander"
+             }
+            ],
+            "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/4278073.png",
+            "jersey": "2",
+            "position": {
+             "abbreviation": "G"
+            },
+            "team": {
+             "id": "25"
+            },
+            "active": true
+           },
+           "team": {
+            "id": "25"
+           }
+          }
+         ]
+        },
+        {
+         "name": "rebounds",
+         "displayName": "Rebounds",
+         "shortDisplayName": "Reb",
+         "abbreviation": "Reb",
+         "leaders": [
+          {
+           "displayValue": "6",
+           "value": 6.0,
+           "athlete": {
+            "id": "4593803",
+            "fullName": "Jalen Williams",
+            "displayName": "Jalen Williams",
+            "shortName": "J. Williams",
+            "links": [
+             {
+              "rel": [
+               "playercard",
+               "desktop",
+               "athlete"
+              ],
+              "href": "https://www.espn.com/nba/player/_/id/4593803/jalen-williams"
+             }
+            ],
+            "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/4593803.png",
+            "jersey": "8",
+            "position": {
+             "abbreviation": "G"
+            },
+            "team": {
+             "id": "25"
+            },
+            "active": true
+           },
+           "team": {
+            "id": "25"
+           }
+          }
+         ]
+        },
+        {
+         "name": "assists",
+         "displayName": "Assists",
+         "shortDisplayName": "Ast",
+         "abbreviation": "Ast",
+         "leaders": [
+          {
+           "displayValue": "6",
+           "value": 6.0,
+           "athlete": {
+            "id": "4900671",
+            "fullName": "Ajay Mitchell",
+            "displayName": "Ajay Mitchell",
+            "shortName": "A. Mitchell",
+            "links": [
+             {
+              "rel": [
+               "playercard",
+               "desktop",
+               "athlete"
+              ],
+              "href": "https://www.espn.com/nba/player/_/id/4900671/ajay-mitchell"
+             }
+            ],
+            "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/4900671.png",
+            "jersey": "25",
+            "position": {
+             "abbreviation": "G"
+            },
+            "team": {
+             "id": "25"
+            },
+            "active": true
+           },
+           "team": {
+            "id": "25"
+           }
+          }
+         ]
+        },
+        {
+         "name": "rating",
+         "displayName": "Rating",
+         "shortDisplayName": "RAT",
+         "abbreviation": "RAT",
+         "leaders": [
+          {
+           "displayValue": "30 PTS",
+           "value": 48.650001525878906,
+           "athlete": {
+            "id": "4278073",
+            "fullName": "Shai Gilgeous-Alexander",
+            "displayName": "Shai Gilgeous-Alexander",
+            "shortName": "S. Gilgeous-Alexander",
+            "links": [
+             {
+              "rel": [
+               "playercard",
+               "desktop",
+               "athlete"
+              ],
+              "href": "https://www.espn.com/nba/player/_/id/4278073/shai-gilgeous-alexander"
+             }
+            ],
+            "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/4278073.png",
+            "jersey": "2",
+            "position": {
+             "abbreviation": "G"
+            },
+            "team": {
+             "id": "25"
+            },
+            "active": true
+           },
+           "team": {
+            "id": "25"
+           }
+          }
+         ]
+        }
+       ],
+       "records": [
+        {
+         "name": "overall",
+         "abbreviation": "Total",
+         "type": "total",
+         "summary": "0-0"
+        },
+        {
+         "name": "Home",
+         "type": "home",
+         "summary": "0-0"
+        },
+        {
+         "name": "Road",
+         "type": "road",
+         "summary": "0-0"
+        }
+       ]
+      }
+     ],
+     "notes": [],
+     "situation": {
+      "lastPlay": {
+       "id": "401909090702",
+       "type": {
+        "id": "43",
+        "text": "Loose Ball Foul"
+       },
+       "text": "Isaiah Hartenstein loose ball foul",
+       "scoreValue": 0,
+       "team": {
+        "id": "25"
+       },
+       "probability": {
+        "tiePercentage": 0.0,
+        "homeWinPercentage": 0.036,
+        "awayWinPercentage": 0.964
+       },
+       "athletesInvolved": [
+        {
+         "id": "4222252",
+         "fullName": "Isaiah Hartenstein",
+         "displayName": "Isaiah Hartenstein",
+         "shortName": "I. Hartenstein",
+         "links": [
+          {
+           "rel": [
+            "playercard",
+            "desktop",
+            "athlete"
+           ],
+           "href": "https://www.espn.com/nba/player/_/id/4222252/isaiah-hartenstein"
+          }
+         ],
+         "headshot": "https://a.espncdn.com/i/headshots/nba/players/full/4222252.png",
+         "jersey": "55",
+         "position": "C",
+         "team": {
+          "id": "25"
+         }
+        }
+       ]
+      }
+     },
+     "status": {
+      "clock": 396.0,
+      "displayClock": "6:36",
+      "period": 4,
+      "type": {
+       "id": "2",
+       "name": "STATUS_IN_PROGRESS",
+       "state": "in",
+       "completed": false,
+       "description": "In Progress",
+       "detail": "6:36 - 4th Quarter",
+       "shortDetail": "6:36 - 4th"
+      }
+     },
+     "broadcasts": [
+      {
+       "market": "national",
+       "names": [
+        "NBC"
+       ]
+      }
+     ],
+     "format": {
+      "regulation": {
+       "periods": 4
+      }
+     },
+     "startDate": "2026-10-21T01:50Z",
+     "broadcast": "NBC",
+     "geoBroadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "NBC"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "highlights": []
+    }
+   ],
+   "links": [
+    {
+     "language": "en-US",
+     "rel": [
+      "live",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nba/game?gameId=401909090",
+     "text": "Gamecast",
+     "shortText": "Gamecast",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "boxscore",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nba/boxscore/_/gameId/401909090",
+     "text": "Box Score",
+     "shortText": "Box Score",
+     "isExternal": false,
+     "isPremium": false
+    },
+    {
+     "language": "en-US",
+     "rel": [
+      "pbp",
+      "desktop",
+      "event"
+     ],
+     "href": "https://www.espn.com/nba/playbyplay/_/gameId/401909090",
+     "text": "Play-by-Play",
+     "shortText": "Play-by-Play",
+     "isExternal": false,
+     "isPremium": false
+    }
+   ],
+   "status": {
+    "clock": 396.0,
+    "displayClock": "6:36",
+    "period": 4,
+    "type": {
+     "id": "2",
+     "name": "STATUS_IN_PROGRESS",
+     "state": "in",
+     "completed": false,
+     "description": "In Progress",
+     "detail": "6:36 - 4th Quarter",
+     "shortDetail": "6:36 - 4th"
+    }
+   }
+  }
+ ]
+}

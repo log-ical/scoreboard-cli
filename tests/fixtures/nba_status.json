@@ -1,0 +1,15 @@
+{
+ "$ref": "http://sports.core.api.espn.com/v2/sports/basketball/leagues/nba/events/401909090/competitions/401909090/status?lang=en&region=us",
+ "clock": 382.0,
+ "displayClock": "6:22",
+ "period": 4,
+ "type": {
+  "id": "2",
+  "name": "STATUS_IN_PROGRESS",
+  "state": "in",
+  "completed": false,
+  "description": "In Progress",
+  "detail": "6:22 - 4th Quarter",
+  "shortDetail": "6:22 - 4th"
+ }
+}

@@ -1,0 +1,144 @@
+{
+ "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873008/competitions/401873008/plays/4018730082342?lang=en&region=us",
+ "id": "4018730082342",
+ "sequenceNumber": "234200",
+ "type": {
+  "id": "5",
+  "text": "Rush",
+  "abbreviation": "RUSH"
+ },
+ "text": "K.Black left end to WAS 23 for 9 yards (A.Robertson; F.Luvu).",
+ "shortText": "Kaelon Black 9 Yd Rush",
+ "alternativeText": "K.Black left end to WAS 23 for 9 yards (A.Robertson; F.Luvu).",
+ "shortAlternativeText": "Kaelon Black 9 Yd Rush",
+ "awayScore": 3,
+ "homeScore": 20,
+ "period": {
+  "number": 3
+ },
+ "clock": {
+  "value": 559.0,
+  "displayValue": "9:19"
+ },
+ "scoringPlay": false,
+ "priority": false,
+ "scoreValue": 0,
+ "modified": "2026-10-20T03:29Z",
+ "team": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/teams/25?lang=en&region=us"
+ },
+ "participants": [
+  {
+   "athlete": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/athletes/4696044?lang=en&region=us"
+   },
+   "position": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/positions/9?lang=en&region=us"
+   },
+   "statistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873008/competitions/401873008/plays/4018730082342/participants/4696044/statistics/1?lang=en&region=us"
+   },
+   "playStatistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873008/competitions/401873008/plays/4018730082342/participants/4696044/statistics/0?lang=en&region=us"
+   },
+   "order": 1,
+   "type": "rusher"
+  },
+  {
+   "athlete": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/athletes/4239694?lang=en&region=us"
+   },
+   "position": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/positions/29?lang=en&region=us"
+   },
+   "statistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873008/competitions/401873008/plays/4018730082342/participants/4239694/statistics/1?lang=en&region=us"
+   },
+   "playStatistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873008/competitions/401873008/plays/4018730082342/participants/4239694/statistics/0?lang=en&region=us"
+   },
+   "order": 2,
+   "type": "assistedBy"
+  },
+  {
+   "athlete": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/athletes/3127273?lang=en&region=us"
+   },
+   "position": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/positions/30?lang=en&region=us"
+   },
+   "statistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873008/competitions/401873008/plays/4018730082342/participants/3127273/statistics/1?lang=en&region=us"
+   },
+   "playStatistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873008/competitions/401873008/plays/4018730082342/participants/3127273/statistics/0?lang=en&region=us"
+   },
+   "order": 3,
+   "type": "assistedBy"
+  }
+ ],
+ "probability": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873008/competitions/401873008/probabilities/4018730082342?lang=en&region=us"
+ },
+ "wallclock": "2026-10-20T02:05:50Z",
+ "teamParticipants": [
+  {
+   "team": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/teams/25?lang=en&region=us"
+   },
+   "id": "25",
+   "statistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873008/competitions/401873008/plays/4018730082342/teams/25/statistics/1?lang=en&region=us"
+   },
+   "playStatistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873008/competitions/401873008/plays/4018730082342/teams/25/statistics/0?lang=en&region=us"
+   },
+   "order": 1,
+   "type": "offense"
+  },
+  {
+   "team": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/teams/28?lang=en&region=us"
+   },
+   "id": "28",
+   "statistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873008/competitions/401873008/plays/4018730082342/teams/28/statistics/1?lang=en&region=us"
+   },
+   "playStatistics": {
+    "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873008/competitions/401873008/plays/4018730082342/teams/28/statistics/0?lang=en&region=us"
+   },
+   "order": 2,
+   "type": "defense"
+  }
+ ],
+ "isPenalty": false,
+ "statYardage": 9,
+ "drive": {
+  "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401873008/competitions/401873008/drives/40187300812?lang=en&region=us"
+ },
+ "start": {
+  "down": 1,
+  "distance": 10,
+  "yardLine": 68,
+  "yardsToEndzone": 32,
+  "downDistanceText": "1st & 10 at WSH 32",
+  "shortDownDistanceText": "1st & 10",
+  "possessionText": "WSH 32",
+  "team": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/teams/25?lang=en&region=us"
+  }
+ },
+ "end": {
+  "down": 2,
+  "distance": 1,
+  "yardLine": 77,
+  "yardsToEndzone": 23,
+  "downDistanceText": "2nd & 1 at WSH 23",
+  "shortDownDistanceText": "2nd & 1",
+  "possessionText": "WSH 23",
+  "team": {
+   "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/2026/teams/25?lang=en&region=us"
+  }
+ },
+ "isTurnover": false
+}
