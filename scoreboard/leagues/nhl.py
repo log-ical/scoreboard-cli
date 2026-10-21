@@ -1,5 +1,6 @@
 """NHL via the public NHL web API (api-web.nhle.com)."""
 
+import datetime
 import threading
 import time
 
@@ -13,6 +14,7 @@ LOGO_URL = "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nhl/500/{}.png&h=2
 ESPN_ABBREV = {"SJS": "sj", "TBL": "tb", "NJD": "nj", "LAK": "la", "UTA": "utah"}
 
 STANDINGS_REFRESH = 300   # seconds between standings fetches (for team records)
+SLATE_DAYS = 7            # the game list covers the NHL's current day and the six after it
 
 LIVE_STATES = ("LIVE", "CRIT")
 FINAL_STATES = ("FINAL", "OFF")
@@ -187,13 +189,32 @@ class Poller:
         return parse_game(data, data_t, detail=True), data_t, max(2, max_age - age + 1)
 
 
+def upcoming(current, seen):
+    """Games on the days after the NHL's current day, to fill out the week.
+
+    score/now has one day with live detail (clocks); scoreboard/now has the
+    days around it, but no clocks, so it only adds the days after. The NHL's
+    "current day" lasts into the next morning, so late at night tonight's
+    games come from here too.
+    """
+    try:
+        last = (datetime.date.fromisoformat(current) + datetime.timedelta(days=SLATE_DAYS - 1)).isoformat()
+        days = fetch_json(API + "/scoreboard/now").get("gamesByDate", [])
+    except Exception:
+        return []   # no week: the current day still shows
+    return [parse_game(g) for day in days if current < day.get("date", "") <= last
+            for g in day.get("games", []) if str(g.get("id")) not in seen]
+
+
 class NHL:
     key = "nhl"
     name = "NHL"
 
     def list_games(self):
         refresh_records()   # in the background: the list doesn't wait for it
-        return [parse_game(g) for g in fetch_json(API + "/score/now").get("games", [])]
+        data = fetch_json(API + "/score/now")
+        games = [parse_game(g) for g in data.get("games", [])]
+        return games + upcoming(data.get("currentDate"), {g.id for g in games})
 
     def open(self, game):
         return Poller(game.ref["id"])

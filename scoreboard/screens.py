@@ -1,6 +1,7 @@
 """The game list and the live game view."""
 
 import dataclasses
+import datetime
 import queue
 import re
 import sys
@@ -11,13 +12,36 @@ import time
 from .clock import ClockSmoother, clock_target
 from .leagues import LEAGUES
 from .model import (fmt_clock, fmt_countdown, fmt_countdown_short, fmt_start, headline, is_stale,
-                    list_status, until_start)
+                    list_status, parse_utc, until_start)
 from .render import big_text, logo_lines, place
 from .settings import LOGO_SCALE, MAX_DELAY, fmt_delay, save_settings, settings, step_delay
 from .term import BOLD, DIM, RESET, REVERSE, center, visible_len
 
 LIST_REFRESH = 30   # seconds between refreshes of the game list
 YELLOW, RED = "\x1b[33m", "\x1b[31m"
+
+
+def start_day(game):
+    """The local date a game starts on, or None if unknown."""
+    ts = parse_utc(game.start_utc)
+    return datetime.date(*time.localtime(ts)[:3]) if ts is not None else None
+
+
+def day_label(day):
+    ahead = (day - datetime.date.today()).days
+    return {-1: "Yesterday", 0: "Today", 1: "Tomorrow"}.get(ahead) or "%s %d" % (day.strftime("%a %b"), day.day)
+
+
+def scroll_window(body, want, top, room, cols):
+    """The part of body that fits in room rows, scrolled from top just
+    enough to show rows want[0]..want[1]. Returns (rows, new top)."""
+    if len(body) <= room:
+        return body, 0
+    room = max(1, room - 2)   # a row above and below says there's more
+    top = max(min(top, want[0]), want[1] - room + 1)
+    top = max(0, min(top, len(body) - room))
+    more = lambda arrow, n: center(DIM + (arrow + " more" if n else "") + RESET, cols)
+    return [more("▲", top)] + body[top:top + room] + [more("▼", len(body) - top - room)], top
 
 
 def with_footer(lines, rows, cols, text):
@@ -75,7 +99,7 @@ def game_list_screen(term, menu):
     idx = next((i for i, lg in enumerate(LEAGUES) if lg.key == settings["league"]), 0)
     cache = {}          # league key -> (fetched_at, games, error)
     loader = ListLoader()
-    show_all, sel = False, 0
+    show_all, sel, top = False, 0, 0
     while True:
         league = LEAGUES[idx]
         for key, games, err in loader.done():
@@ -111,14 +135,24 @@ def game_list_screen(term, menu):
         elif err and not games:
             lines.append(center(RED + "Could not reach %s data: %s" % (league.name, err[:60]) + RESET, cols))
         elif not games:
-            lines.append(center("No %s games today." % league.name, cols))
+            lines.append(center("No %s games scheduled." % league.name, cols))
         else:
             if not live:
                 lines.append(center(DIM + "No games are live right now. Showing all scheduled games." + RESET, cols))
             else:
-                lines.append(center(DIM + ("All games today" if show_all else "Live games") + RESET, cols))
+                lines.append(center(DIM + ("All games" if show_all else "Live games") + RESET, cols))
             lines.append("")
+            # A list spanning several days (NHL and NFL: the week) gets a
+            # heading per day, and scrolls to keep the selected game in view.
+            days = [start_day(g) for g in shown]
+            headings = len(set(days)) > 1
+            body, want = [], (0, 0)
             for i, g in enumerate(shown):
+                first = headings and (i == 0 or days[i] != days[i - 1])
+                if first:
+                    if body:
+                        body.append("")
+                    body.append(center(BOLD + (day_label(days[i]) if days[i] else "Date unknown") + RESET, cols))
                 if g.state == "pre":
                     score = "         "
                 elif hide:
@@ -133,7 +167,11 @@ def game_list_screen(term, menu):
                     list_status(g, hide, settings["clock_24h"]), soon)
                 if i == sel:
                     row = REVERSE + BOLD + row + RESET
-                lines.append(center(row, cols))
+                    want = (len(body) - (1 if first else 0), len(body))   # with its day's heading
+                body.append(center(row, cols))
+            room = rows - len(lines) - 2 - (1 if settings["delay"] else 0)   # blank, delay, footer
+            window, top = scroll_window(body, want, top, room, cols)
+            lines += window
         lines.append("")
         if settings["delay"]:
             lines.append(center(DIM + "Stream delay: %s" % fmt_delay(settings["delay"]) + RESET, cols))
@@ -154,11 +192,11 @@ def game_list_screen(term, menu):
                 idx = min(int(key) - 1, len(LEAGUES) - 1)
             else:
                 idx = (idx + (-1 if key == "left" else 1)) % len(LEAGUES)
-            sel, show_all = 0, False
+            sel, show_all, top = 0, False, 0
             settings["league"] = LEAGUES[idx].key
             save_settings()
         elif key == "a":
-            show_all, sel = not show_all, 0
+            show_all, sel, top = not show_all, 0, 0
         elif key == "r":
             loader.load(league)   # the list stays up until the new one is in
         elif key == "o":
