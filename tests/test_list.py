@@ -224,6 +224,113 @@ class ListScreenTest(unittest.TestCase):
             term.keys.put("q")
             t.join(1)
 
+    def two_leagues(self, release=None):
+        """A league with yesterday's finals and today's games, whose earlier()
+        gives two game days back (waiting for `release` if given), and another."""
+        today = datetime.date.today()
+        days = [(today - datetime.timedelta(days=n)).isoformat() for n in (1, 2, 3)]
+        asked = []
+
+        def at(day, hour):
+            return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(
+                time.mktime(tuple(int(x) for x in day.split("-")) + (hour, 0, 0, 0, 0, -1))))
+
+        class Week(FakeLeague):
+            first_day = days[0]
+
+            def list_games(self):
+                # The NHL's "current day" after midnight: last night's finals, then today's.
+                return [Game("tst", "f%d" % i, "final", Team("FN%d" % i, "f"), Team("FH%d" % i, "f"),
+                             start_utc=at(days[0], 19)) for i in range(3)] + \
+                       [Game("tst", "p%d" % i, "pre", Team("PR%d" % i, "p"), Team("PH%d" % i, "p"),
+                             start_utc=at(today.isoformat(), 19)) for i in range(2)]
+
+            def earlier(self, day):
+                asked.append(day)
+                if release:
+                    release.wait(2)
+                i = days.index(day)
+                if i + 1 < len(days):
+                    return days[i + 1], [Game("tst", "e%d" % i, "final", Team("EA%d" % i, "e"), Team("EH%d" % i, "e"),
+                                              start_utc=at(days[i + 1], 19))]
+                return None, []
+
+        class Other(FakeLeague):
+            def list_games(self):
+                return [Game("oth", "o1", "pre", Team("OTH", "o"), Team("ER", "e"))]
+        screens.LEAGUES = [Week(None, "tst"), Other(None, "oth")]
+        settings.update(league="tst", delay=0)
+        term, out = FakeTerm(), {}
+        t = threading.Thread(target=lambda: out.update(r=screens.game_list_screen(term, FakeMenu())), daemon=True)
+        t.start()
+        return term, t, asked
+
+    def selected(self, term):
+        if not term.draws:
+            return ""
+        rows = [l for l in term.draws[-1][1].split("\n") if "\x1b[7m" in l and "@" in l]
+        return plain(rows[0]) if rows else ""
+
+    def test_fresh_list_starts_at_the_next_game(self):
+        term, t, asked = self.two_leagues()
+        try:
+            self.assertTrue(wait_for(lambda: "PR0  @ PH0" in self.selected(term)))   # not last night's FN0
+            for _ in range(3):
+                term.keys.put("up")      # up through last night's finals to the top
+            self.assertTrue(wait_for(lambda: "FN0  @ FH0" in self.selected(term)))
+            self.assertEqual(asked, [])
+        finally:
+            term.keys.put("q")
+            t.join(1)
+
+    def test_switching_leagues_hides_earlier_days_but_keeps_them(self):
+        term, t, asked = self.two_leagues()
+        try:
+            self.assertTrue(wait_for(lambda: "PR0" in self.selected(term)))
+            for _ in range(4):
+                term.keys.put("up")      # to the top, then the day before
+            self.assertTrue(wait_for(lambda: term.shown("EA0")))
+            self.assertEqual(len(asked), 1)
+            term.keys.put("right")
+            self.assertTrue(wait_for(lambda: term.shown("OTH")))
+            term.keys.put("left")        # back: the earlier day is kept, not shown
+            self.assertTrue(wait_for(lambda: "PR0" in self.selected(term)))
+            self.assertNotIn("EA0", term.draws[-1][1])
+            for _ in range(4):
+                term.keys.put("up")      # to the top again, then the kept day: no fetch
+            self.assertTrue(wait_for(lambda: "EA0" in self.selected(term)))
+            self.assertEqual(len(asked), 1)
+            term.keys.put("up")          # past what's kept: fetch the next day
+            self.assertTrue(wait_for(lambda: term.shown("EA1")))
+            self.assertEqual(len(asked), 2)
+        finally:
+            term.keys.put("q")
+            t.join(1)
+
+    def test_a_day_that_arrives_after_leaving_is_kept_hidden(self):
+        release = threading.Event()
+        term, t, asked = self.two_leagues(release)
+        try:
+            self.assertTrue(wait_for(lambda: "PR0" in self.selected(term)))
+            for _ in range(4):
+                term.keys.put("up")
+            self.assertTrue(wait_for(lambda: term.shown("loading earlier games")))
+            term.keys.put("right")       # leave before it arrives
+            self.assertTrue(wait_for(lambda: term.shown("OTH")))
+            release.set()
+            time.sleep(0.2)
+            term.keys.put("left")
+            self.assertTrue(wait_for(lambda: "PR0" in self.selected(term)))
+            self.assertNotIn("EA0", term.draws[-1][1])
+            for _ in range(4):
+                term.keys.put("up")
+            self.assertTrue(wait_for(lambda: "EA0" in self.selected(term)))
+            self.assertEqual(len(asked), 1)
+        finally:
+            release.set()
+            term.keys.put("q")
+            t.join(1)
+
     def test_up_on_live_games_switches_to_all_games(self):
         class Live(FakeLeague):
             first_day = datetime.date.today().isoformat()

@@ -107,9 +107,25 @@ class ListLoader:
 
 # Earlier game days loaded with ↑ at the top of a list, kept for the session so
 # they're still there after watching one: league key -> {"pages": [(day,
-# games)] earliest first, "done": nothing earlier, "err": the last failure}.
+# games)] earliest first, "shown": how many of the latest pages are on screen
+# (leaving the league hides them again; ↑ brings them back without a fetch),
+# "done": nothing earlier, "err": the last failure}.
 _earlier = {}
 _picked = None    # (league key, game id) last opened, to select it again on return
+
+
+def _earlier_state(key):
+    return _earlier.setdefault(key, {"pages": [], "shown": 0, "done": False, "err": None})
+
+
+def start_index(games):
+    """Where a fresh list starts: the first live game, else the next one to
+    be played, else the top (so last night's finals don't come first)."""
+    for state in ("live", "pre"):
+        i = next((i for i, g in enumerate(games) if g.state == state), None)
+        if i is not None:
+            return i
+    return 0
 
 
 def game_list_screen(term, menu):
@@ -120,21 +136,22 @@ def game_list_screen(term, menu):
     loader = ListLoader()
     show_all, sel, top = False, 0, 0
     games = []          # the shown league's list, as of the last frame
+    jump = align = True  # select the next game once the list is in, and scroll to it
     while True:
         league = LEAGUES[idx]
         for key, result, err in loader.done():
             if isinstance(key, tuple):   # an earlier day
-                state = _earlier.setdefault(key[1], {"pages": [], "done": False, "err": None})
+                state = _earlier_state(key[1])
                 state["err"] = err
                 if not err and result[0] is None:
                     state["done"] = True
                 elif not err:
                     known = {g.id for _, page in state["pages"] for g in page}
-                    page = [g for g in result[1] if g.id not in known]
-                    state["pages"].insert(0, (result[0], page))
+                    state["pages"].insert(0, (result[0], [g for g in result[1] if g.id not in known]))
+                    # Shown if it's for the list on screen; else just kept for ↑ later.
                     if key[1] == league.key and (show_all or not any(g.state == "live" for g in games)):
-                        # The new day goes above: from the top, step up into it.
-                        sel = len(page) - 1 if sel == 0 else sel + len(page)
+                        state["shown"] += 1
+                        sel = step_into(state, games, sel)
                 continue
             if err:
                 result = cache[key][1] if key in cache else []
@@ -143,7 +160,8 @@ def game_list_screen(term, menu):
         if entry is None or time.time() - entry[0] > LIST_REFRESH:
             loader.load(league)
         _, games, err = entry or (0, [], None)
-        state = _earlier.setdefault(league.key, {"pages": [], "done": False, "err": None})
+        state = _earlier_state(league.key)
+        # The day to fetch the game day before, once every kept day is shown.
         start = state["pages"][0][0] if state["pages"] else getattr(league, "first_day", None)
 
         cols, rows = term.size()
@@ -156,8 +174,11 @@ def game_list_screen(term, menu):
 
         live = [g for g in games if g.state == "live"]
         current = {g.id for g in games}
-        everything = [g for _, page in state["pages"] for g in page if g.id not in current] + games
+        revealed = state["pages"][len(state["pages"]) - state["shown"]:] if state["shown"] else []
+        everything = [g for _, page in revealed for g in page if g.id not in current] + games
         shown = everything if (show_all or not live) else live
+        if jump and games:
+            sel, jump, align = start_index(shown), False, True
         if _picked and _picked[0] == league.key and games:
             # Back from a game: select it again (it may be an earlier one).
             ids = [g.id for g in everything]
@@ -215,6 +236,8 @@ def game_list_screen(term, menu):
                     want = (len(body) - (1 if first else 0), len(body))   # with its day's heading
                 body.append(center(row, cols))
             room = rows - len(lines) - 2 - (1 if settings["delay"] else 0)   # blank, delay, footer
+            if align:   # a fresh list: its starting game (and its day's heading) at the top
+                top, align = want[0], False
             window, top = scroll_window(body, want, top, room, cols, earlier_note(state, start, loader, league,
                                                                                    shown is live))
             lines += window
@@ -234,6 +257,9 @@ def game_list_screen(term, menu):
                 sel -= 1
             elif live and not show_all:
                 show_all, top = True, 0   # earlier games are in the all-games list
+            elif state["shown"] < len(state["pages"]):
+                state["shown"] += 1       # a day already fetched: no need to wait
+                sel = step_into(state, games, sel)
             elif start and not state["done"] and games:
                 loader.load_earlier(league, start)
         elif key in ("down", "j"):
@@ -243,11 +269,12 @@ def game_list_screen(term, menu):
                 idx = min(int(key) - 1, len(LEAGUES) - 1)
             else:
                 idx = (idx + (-1 if key == "left" else 1)) % len(LEAGUES)
-            sel, show_all, top = 0, False, 0
+            _earlier_state(league.key)["shown"] = 0   # kept, but hidden until ↑ asks again
+            sel, show_all, top, jump = 0, False, 0, True
             settings["league"] = LEAGUES[idx].key
             save_settings()
         elif key == "a":
-            show_all, sel, top = not show_all, 0, 0
+            show_all, sel, top, jump = not show_all, 0, 0, True
         elif key == "r":
             loader.load(league)   # the list stays up until the new one is in
         elif key == "o":
@@ -257,12 +284,22 @@ def game_list_screen(term, menu):
             return league, shown[sel]
 
 
+def step_into(state, games, sel):
+    """The selection after the earliest shown day was put above the list:
+    from the top, onto that day's last game; else the same game as before."""
+    current = {g.id for g in games}
+    n = sum(1 for g in state["pages"][len(state["pages"]) - state["shown"]][1] if g.id not in current)
+    return max(0, n - 1) if sel == 0 else sel + n
+
+
 def earlier_note(state, start, loader, league, live_only):
     """The top row's "▲ earlier" note: what ↑ from the first game does."""
     if not start:
         return None   # the league can't look back
     if live_only:
         text = "▲ all games"
+    elif state["shown"] < len(state["pages"]):
+        text = "▲ earlier"   # kept from before: shows at once
     elif ("earlier", league.key) in loader.busy:
         text = "▲ loading earlier games…"
     elif state["done"]:

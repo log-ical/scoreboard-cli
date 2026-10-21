@@ -35,7 +35,9 @@ The NHL and NBA lists cover the week (the league's current day plus the six afte
 week; each day gets a heading, and the list scrolls. Days ahead are refetched every 10 minutes.
 Pressing `↑` on the first game (under the `▲ earlier` marker) loads the last day before it that had games;
 keep pressing to go further back (up to two weeks between game days). With games live, the first `↑`
-switches to all games. Earlier days stay loaded until you quit, and coming back from a game selects it again.
+switches to all games. Earlier days stay loaded until you quit: switching leagues hides them again, and `↑`
+brings them back without reloading. Coming back from a game selects it again. A list starts on the first
+live game, or else the next one to be played, so late at night last night's finals don't come first.
 
 ## Options (saved to `~/.config/scoreboard/settings.json`)
 
