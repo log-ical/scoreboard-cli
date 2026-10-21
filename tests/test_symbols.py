@@ -8,7 +8,7 @@ from unittest import mock
 
 from tests.helpers import ROOT
 from tests.test_render import FakeTerminal
-from scoreboard import live, render, settings as cfg, term
+from scoreboard import live, settings as cfg, term
 from scoreboard.model import Game, Team
 from scoreboard.term import RESET, Colors, visible_len
 
@@ -75,17 +75,6 @@ class SymbolsTest(unittest.TestCase):
             self.assertIn("%s shot %s goal" % (shot, goal), text)
         term.set_symbols("console")
         self.assertEqual((live.marks()["made"], live.marks()["missed"]), ("O", "x"))
-
-    def test_console_logos_use_no_backgrounds(self):
-        grid = [[(250, 250, 250), (200, 30, 40), None], [(240, 240, 240), None, (0, 0, 200)]]
-        colors = Colors("16")
-        term.set_symbols("full")
-        full = render.logo_lines(grid, colors)
-        self.assertRegex(full[0], r"\x1b\[(4|10)\dm")   # the lower pixel as a background
-        term.set_symbols("console")
-        console = render.logo_lines(grid, colors)
-        self.assertNotRegex(console[0], r"\x1b\[(4|10)\dm|48;")
-        self.assertEqual(plain(console[0]), "█▀▄")   # both pixels, top only, bottom only
 
     def test_draw_uses_the_set_and_options_switch_it(self):
         term.set_symbols("console")

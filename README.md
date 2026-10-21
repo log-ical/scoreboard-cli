@@ -52,8 +52,7 @@ switches to all games. Earlier days stay loaded until you quit, and coming back 
   period's shots on a rink map, or a zone strip showing where the latest event happened. `v` switches
   the style, remembered per league. It needs about a 40-row window in the vertical layout.
 - **Symbols**: auto picks console-safe symbols on the Linux text console (`TERM=linux`), whose fonts draw
-  many symbols alike (`◦` and `●`), ASCII when the terminal has no Unicode, and full Unicode elsewhere. On the
-  console, logos are drawn without background colors, which it can only show dark (that caused stripes).
+  many symbols alike (`◦` and `●`), ASCII when the terminal has no Unicode, and full Unicode elsewhere.
 - **Logo size**, **Logo layout** (vertical or horizontal), **Color mode**, **24-hour start times**
 
 ## Data and the clock
