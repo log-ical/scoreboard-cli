@@ -19,6 +19,8 @@ DEFAULTS = {
     "show_stats": True,
     "show_situation": True,
     "show_record": True,
+    "play_by_play": False,
+    "live_styles": {},       # league -> the play-by-play view's style (v switches it)
     "logo_size": "large",
     "layout": "vertical",
     "color": "auto",
@@ -43,6 +45,7 @@ OPTIONS = [
     ("show_stats", "Show team stats", [True, False]),
     ("show_situation", "Show game situation", [True, False]),
     ("show_record", "Show season records", [True, False]),
+    ("play_by_play", "Play-by-play view", [False, True]),
     ("logo_size", "Logo size", ["small", "medium", "large"]),
     ("layout", "Logo layout", ["vertical", "horizontal"]),
     ("color", "Color mode", ["auto", "truecolor", "256", "16"]),
@@ -57,6 +60,7 @@ HINTS = {
     "show_stats": "NHL: shots on goal. NBA: timeouts and fouls. NFL: timeouts.",
     "show_situation": "NHL: power play. NBA: bonus. NFL: possession, down & distance.",
     "logo_size": "Logos always shrink to fit the window.",
+    "play_by_play": "A live field, court or rink under the clock. In a game, v switches its style.",
     "layout": "Vertical: away above home. Horizontal: side by side, clock between.",
 }
 

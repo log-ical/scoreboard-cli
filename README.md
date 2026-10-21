@@ -13,7 +13,7 @@ Live NHL, NBA and NFL scores in the terminal. Python 3 standard library only.
 | Screen    | Keys |
 |-----------|------|
 | Game list | `←/→` or `1/2/3` league · `↑/↓` move · `Enter` watch · `a` live/all · `o` options · `r` refresh · `q` quit |
-| Game view | `p` expand/collapse the play list (`↑/↓` scroll, `[`/`]` page) · `+`/`-` adjust delay · `o` options · `b`/`Esc` back · `q` quit |
+| Game view | `p` expand/collapse the play list (`↑/↓` scroll, `[`/`]` page) · `v` next play-by-play view · `+`/`-` adjust delay · `o` options · `b`/`Esc` back · `q` quit |
 | Options   | `↑/↓` choose · `←/→` change · `o`/`Esc` close |
 
 `Ctrl-L` repaints the screen if anything ever looks garbled.
@@ -43,6 +43,10 @@ week; each day gets a heading, and the list scrolls. Days ahead are refetched ev
 - **Show game situation**: NHL power play and empty net; NBA bonus; NFL possession, red zone, down and distance.
 - **Show season records**: next to each team name (NHL W-L-OTL from the standings). Hidden while a delayed view
   is behind a game that has already ended, since the record would give the result away.
+- **Play-by-play view**: a live picture under the clock. NFL: a yard bar or full field with the ball,
+  drive direction and first-down line. NBA: a lead tracker or the last shots on a half court. NHL: this
+  period's shots on a rink map, or a zone strip showing where the latest event happened. `v` switches
+  the style, remembered per league. It needs about a 40-row window in the vertical layout.
 - **Logo size**, **Logo layout** (vertical or horizontal), **Color mode**, **24-hour start times**
 
 ## Data and the clock
@@ -54,7 +58,8 @@ week; each day gets a heading, and the list scrolls. Days ahead are refetched ev
 
 Between updates the clock runs locally, absorbing small corrections smoothly. Stoppages show up only
 when the data reports them, so the clock can briefly run past a whistle and then jump back.
-Logos come from ESPN's CDN and are cached in `~/.cache/scoreboard/logos/`.
+Logos come from ESPN's CDN and are cached in `~/.cache/scoreboard/logos/`. The play-by-play view adds one request
+per NHL poll (the play-by-play feed, ~11 KB) and one per NBA game (all its plays, ~40 KB), only while it's on.
 
 ## Layout
 

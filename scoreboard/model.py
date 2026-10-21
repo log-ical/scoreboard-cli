@@ -41,6 +41,13 @@ class Game:
     last_play: str = ""
     plays: list = field(default_factory=list)   # [(seq, text)], newest first; seq is None for NHL
     play_seq: int = None           # sequence number of the play behind last_play (ESPN)
+    # For the play-by-play view. NFL: (side with the ball, "away" or "home";
+    # the ball and the first-down line, or None, in yards from the away goal
+    # line). NHL: this period's shots [(x, y, side, goal)] and the latest
+    # event (text, x, side), in rink feet with the home end on the right.
+    ball: tuple = None
+    rink: list = field(default_factory=list)
+    rink_last: tuple = None
     note: str = ""                 # extra live line, e.g. NFL down & distance
     ref: dict = field(default_factory=dict)   # league-specific ids for polling
 

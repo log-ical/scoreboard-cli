@@ -9,6 +9,7 @@ import textwrap
 import threading
 import time
 
+from . import live
 from .clock import ClockSmoother, clock_target
 from .leagues import LEAGUES
 from .model import (fmt_clock, fmt_countdown, fmt_countdown_short, fmt_start, headline, is_stale,
@@ -313,6 +314,11 @@ def side_by_side(g, logos, colors, tints, flashes, middle, tail, cols, height, a
             for a, m, h in zip(columns[0], middle, columns[1])] + tail
 
 
+def visible_details(g, details):
+    """The NBA play-by-play view's plays, cut at the view's last play like visible_plays."""
+    return [d for d in details if g.play_seq is not None and d.seq <= g.play_seq]
+
+
 def visible_plays(g, loaded=None):
     """Plays up to the one the (possibly delayed) view shows, newest first.
 
@@ -390,6 +396,7 @@ class GameFeed:
     def __init__(self, poller):
         self._poller = poller
         self.has_plays = hasattr(poller, "play_history")
+        self.has_live = hasattr(poller, "want_live")
         self.results = queue.Queue()
         self.lock = threading.Lock()
         # Requests, under the lock: play list wanted; list requests made
@@ -397,6 +404,7 @@ class GameFeed:
         # and answered. Counting means a request made mid-load is never lost.
         self.want_plays, self.asked, self.served = False, 0, 0
         self.older_asked = self.older_served = 0
+        self.want_live = False   # the play-by-play view is on
         self.wake, self.stopped = threading.Event(), threading.Event()
         self.thread = threading.Thread(target=self._run, daemon=True)
         self.thread.start()
@@ -406,6 +414,13 @@ class GameFeed:
         if self.has_plays:
             with self.lock:
                 self.want_plays, self.asked = on, self.asked + 1
+            self.wake.set()
+
+    def show_live(self, on):
+        """The play-by-play view was turned on or off: poll right away for its data."""
+        if self.has_live:
+            with self.lock:
+                self.want_live, self.asked = on, self.asked + 1
             self.wake.set()
 
     def load_older(self):
@@ -441,10 +456,12 @@ class GameFeed:
             if self.stopped.is_set():
                 return
             with self.lock:
-                want, asked, older = self.want_plays, self.asked, self.older_asked
+                want, asked, older, live = self.want_plays, self.asked, self.older_asked, self.want_live
             try:
                 if self.has_plays:
                     poller.want_plays = want
+                if self.has_live:
+                    poller.want_live = live
                 if older > self.older_served:
                     poller.load_older()   # one page for every request made before this read
                     self._post("plays", *poller.play_history())
@@ -456,6 +473,8 @@ class GameFeed:
                     started = time.time()
                     try:
                         snap, data_t, wait = poller.poll()
+                        if live and hasattr(poller, "play_details"):
+                            self._post("details", poller.play_details())   # a copy, as with plays
                         self._post("game", snap, data_t)
                     except Exception as e:
                         self._post("error", str(e))
@@ -486,8 +505,8 @@ def game_view(term, league, feed, logos, colors, menu):
     loaded = ([], False) if feed.has_plays else None   # ESPN: (plays, whether older ones exist)
     prev_score, alert, alert_side, alert_until = None, None, None, 0
     smoother = ClockSmoother()
-    footer = "b back   o options   p plays   +/- delay   q quit"
     expanded, scroll, page, at_end = False, 0, 1, False
+    details, live_on = [], None   # the play-by-play view's NBA plays; whether it's on
 
     while True:
         now = time.time()
@@ -502,12 +521,19 @@ def game_view(term, league, feed, logos, colors, menu):
                 err = None
             elif kind == "error":
                 err = msg[0]
+            elif kind == "details":
+                details = msg[0]
             else:
                 loaded = msg
         if updates:
             # Drop snapshots too old for any allowed delay (keep one older).
             while len(history) > 2 and history[1][0] < now - MAX_DELAY - 60:
                 history.pop(0)
+
+        if settings["play_by_play"] != live_on:   # on the way in, and after the options menu
+            live_on = settings["play_by_play"]
+            feed.show_live(live_on)
+        footer = "b back  o options  p plays  %s+/- delay  q quit" % ("v view  " if live_on else "")
 
         cols, rows = term.size()
         if menu.open:
@@ -576,7 +602,14 @@ def game_view(term, league, feed, logos, colors, menu):
             last_play = settings["show_last_play"] and g.last_play and not compact
             aspect = term.pixel_aspect()
             tail = ["", center(DIM + g.last_play[:cols - 2] + RESET, cols)] if last_play else []
-            panel = None
+            tints = (logos.tint(g.away), logos.tint(g.home))
+            panel = live_fn = None
+            if live_on:
+                style = live.style_of(league.key, settings["live_styles"].get(league.key))
+                shown = visible_details(g, details)
+
+                def live_fn(width):
+                    return live.view(league.key, style, g, shown, width, colors, tints, league)
             if expanded:
                 if loaded is not None:
                     plays, older = visible_plays(g, loaded[0]), loaded[1]
@@ -591,7 +624,20 @@ def game_view(term, league, feed, logos, colors, menu):
                     if not loading:
                         scroll = top   # while plays are loading, keep a scroll past the end for them
                     return rows
-            tints = (logos.tint(g.away), logos.tint(g.home))
+            plays_fn = panel
+            if live_fn:
+                def panel(width, height):
+                    """Between the teams: the play-by-play view, then the play list or the last play."""
+                    out = live_fn(width)
+                    if len(out) > height:
+                        out = []
+                    if not out:
+                        out = [DIM + "(the play-by-play view needs a bigger window)" + RESET]
+                    if plays_fn and height - len(out) - 1 >= 3:
+                        out += [""] + plays_fn(width, height - len(out) - 1)
+                    elif not plays_fn and last_play and height - len(out) >= 2:
+                        out += ["", DIM + g.last_play[:width] + RESET]
+                    return out
             flashes = [blink_on and alert_side == side and alert for side in ("away", "home")]
 
             lines = [""] * rows
@@ -614,8 +660,17 @@ def game_view(term, league, feed, logos, colors, menu):
                 # each team centered in its half above and below it.
                 # No room to spare here: the list goes under the clock and the
                 # logos shrink to make room for it.
-                if panel:
-                    middle += [""] + panel(cols - 4, max(4, usable // 3) - 1)
+                list_rows = max(4, usable // 3) if plays_fn else 0
+                if live_fn:
+                    view = live_fn(min(cols - 4, live.MAX_WIDTH))
+                    # Each team still needs its name, stats and score.
+                    needed = 2 * (6 if compact else 8) + 2
+                    if view and usable - len(middle) - len(view) - 1 - list_rows >= needed:
+                        middle += [""] + view
+                    else:
+                        middle.append(DIM + "(the play-by-play view needs a bigger window)" + RESET)
+                if plays_fn:
+                    middle += [""] + plays_fn(cols - 4, list_rows - 1)
                 elif last_play:
                     middle.append(DIM + g.last_play[:cols - 2] + RESET)
                 middle = [center(m, cols) for m in middle]
@@ -653,6 +708,10 @@ def game_view(term, league, feed, logos, colors, menu):
         elif key == "p":
             expanded, scroll = not expanded, 0
             feed.show_plays(expanded)
+        elif key == "v" and live_on:   # the next style of play-by-play view, remembered per league
+            chosen = live.style_of(league.key, settings["live_styles"].get(league.key))
+            settings["live_styles"] = {**settings["live_styles"], league.key: live.next_style(league.key, chosen)}
+            save_settings()
         elif expanded and key in ("up", "k", "down", "j", "[", "]"):
             if key in ("down", "j", "]") and at_end and loaded and loaded[1]:
                 feed.load_older()   # past the loaded plays: fetch the page before them

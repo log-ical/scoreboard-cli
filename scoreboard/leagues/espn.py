@@ -14,6 +14,7 @@ import datetime
 import re
 import threading
 import time
+from collections import namedtuple
 from functools import partial
 from urllib.parse import urlparse
 
@@ -59,6 +60,11 @@ def _team(c):
     )
 
 
+# A play as the NBA play-by-play views see it: game seconds elapsed, the
+# score after it, and for a field-goal try (x, y, side, made) in feet.
+Detail = namedtuple("Detail", "seq elapsed away home shot")
+
+
 def _ref_id(ref):
     m = re.search(r"/teams/(\d+)", (ref or {}).get("$ref", ""))
     return m.group(1) if m else None
@@ -91,6 +97,22 @@ def _parallel(*calls):
     return results
 
 
+def field_position(spot, g):
+    """(side with the ball, ball, first-down line or None) from a play's
+    start or end, in yards from the away goal line, or None. The away team
+    attacks the home end zone, drawn on the right."""
+    has_ball = _ref_id(spot.get("team"))
+    side = "away" if has_ball == g.away.id else "home" if has_ball == g.home.id else None
+    to_go = spot.get("yardsToEndzone")
+    if side is None or not isinstance(to_go, (int, float)) or not 0 <= to_go <= 100:
+        return None
+    ball = 100 - to_go if side == "away" else to_go
+    first, dist = None, spot.get("distance") or 0
+    if (spot.get("down") or 0) > 0 and dist > 0:
+        first = min(100, ball + dist) if side == "away" else max(0, ball - dist)
+    return side, ball, first
+
+
 class EspnLeague:
     key = name = sport = league = None
     periods = 4
@@ -99,6 +121,8 @@ class EspnLeague:
     clock_cap = 26         # max seconds the clock can run without a new play
     stop_words = ()
     slate_days = 1         # days in the game list: the scoreboard's day and the ones after it
+    ot_secs = 10 * 60
+    track_plays = False    # the play-by-play view needs every play (NBA's lead tracker, shot chart)
 
     def __init__(self):
         self.later = {}    # "YYYYMMDD" -> (fetched at, events) for the days after the scoreboard's
@@ -111,6 +135,13 @@ class EspnLeague:
             ot = "OT" if n == 1 else "%dOT" % n
             return ot, ot
         return ordinal(period) + " QUARTER", "Q%d" % period
+
+    def elapsed(self, period, clock):
+        """Game seconds played when `clock` seconds are left in `period`."""
+        regular = min(period - 1, self.periods) * self.period_secs
+        overtime = max(0, period - 1 - self.periods) * self.ot_secs
+        length = self.period_secs if period <= self.periods else self.ot_secs
+        return regular + overtime + max(0, length - clock)
 
     def apply_status(self, g, st):
         """Fill state, period and clock fields from an ESPN status object."""
@@ -208,6 +239,8 @@ class NBA(EspnLeague):
     key, name = "nba", "NBA"
     sport, league = "basketball", "nba"
     slate_days = 7         # the scoreboard has one day; NFL's already has the week
+    ot_secs = 5 * 60
+    track_plays = True
     period_secs = 12 * 60
     poll_every = 3
     clock_cap = 26         # something happens within a shot clock (24 s)
@@ -281,6 +314,7 @@ class NFL(EspnLeague):
                     team.tags.append("RED ZONE")
         if (end.get("down") or 0) > 0 and end.get("downDistanceText"):
             g.note = end["downDistanceText"]
+        g.ball = field_position(end, g)   # where the next snap is
 
     def score_alert(self, points):
         return {6: "TOUCHDOWN!", 7: "TOUCHDOWN!", 8: "TOUCHDOWN!", 3: "FIELD GOAL!",
@@ -298,7 +332,10 @@ class Poller:
         self.status_val, self.status_seen = None, 0.0
         self.play_status_val = None
         self.want_plays = False     # set by the game view while the play list is open
+        self.want_live = False      # ... and while the play-by-play view is on
         self.plays = {}             # seq -> text
+        self.details = {}           # seq -> Detail, for the play-by-play view (track_plays)
+        self.backfilled = False
         self.plays_fetched, self.plays_ref = 0.0, False
         # Pages of the API's play list loaded so far (page 1 is the opening tip).
         self.oldest_page = self.newest_page = None
@@ -313,8 +350,48 @@ class Poller:
         clock = (play.get("clock") or {}).get("displayValue", "")
         return seq, "%-3s %5s  %s" % (self.league.labels(period)[1], clock, play.get("text") or "")
 
+    def play_detail(self, play, seq):
+        """What the NBA play-by-play views need from a play."""
+        L, period = self.league, (play.get("period") or {}).get("number") or 1
+        clock = (play.get("clock") or {}).get("value") or 0
+        team = _ref_id(play.get("team"))
+        side = "away" if team == self.base.away.id else "home" if team == self.base.home.id else None
+        shot, xy = None, play.get("coordinate") or {}
+        x, y = xy.get("x"), xy.get("y")
+        # Free throws carry junk coordinates; real ones are feet on a half court.
+        if play.get("shootingPlay") and side and isinstance(x, (int, float)) and isinstance(y, (int, float)) \
+                and 0 <= x <= 50 and 0 <= y <= 47:
+            shot = (x, y, side, bool(play.get("scoringPlay")))
+        return Detail(seq, L.elapsed(period, clock), int(play.get("awayScore") or 0),
+                      int(play.get("homeScore") or 0), shot)
+
+    def _record(self, play):
+        """Keep a play for the play list (and the play-by-play view); its (seq, text)."""
+        entry = self.play_entry(play)
+        if entry:
+            self.plays[entry[0]] = entry[1]
+            if self.league.track_plays:
+                self.details[entry[0]] = self.play_detail(play, entry[0])
+        return entry
+
     def _entries(self, page):
-        return [e for e in map(self.play_entry, page.get("items", [])) if e]
+        return [e for e in map(self._record, page.get("items", [])) if e]
+
+    def backfill(self):
+        """Every play so far, once, for the lead tracker: a whole NBA game is
+        one ~40 KB request. After it the play list has everything, too."""
+        page = fetch_json(self.core + "/plays?limit=1000")
+        for p in page.get("items", []):
+            self._record(p)
+        self.backfilled = True
+        if (page.get("pageCount") or 1) == 1:
+            count = page.get("count") or len(page.get("items", []))
+            self.oldest_page, self.newest_page = 1, max(1, -(-count // PLAY_HISTORY))
+            self.plays_fetched, self.plays_ref = time.time(), self.play_ref
+
+    def play_details(self):
+        """[Detail] in play order, a copy for the game view."""
+        return [self.details[seq] for seq in sorted(self.details)]
 
     def fetch_plays(self):
         """Load the newest two pages of plays (the API pages from the first play on)."""
@@ -334,13 +411,14 @@ class Poller:
         restart = self.oldest_page is None or want[0] > start + 1
         need = want if restart else range(start, last + 1)
         pages.update(get([n for n in need if n not in pages]))
-        entries = [e for n in need for e in self._entries(pages[n])]
         if restart:
             # Keep only plays newer than these pages (seen by polling).
-            newest = max((seq for seq, _ in entries), default=0)
+            newest = max((e[0] for n in need for e in map(self.play_entry, pages[n].get("items", [])) if e),
+                         default=0)
             self.plays = {seq: t for seq, t in self.plays.items() if seq > newest}
             self.oldest_page = want[0]
-        self.plays.update(entries)
+        for n in need:
+            self._entries(pages[n])
         self.newest_page = last
         self.plays_fetched, self.plays_ref = time.time(), self.play_ref
 
@@ -379,12 +457,16 @@ class Poller:
             self.play = fetch_json(ref)
             self.play_ref = ref
             self.play_status_val = None
-            entry = self.play_entry(self.play)
-            if entry:
-                self.plays[entry[0]] = entry[1]
+            self._record(self.play)
+        live = self.want_live and L.track_plays
+        if live and not self.backfilled:
+            try:
+                self.backfill()
+            except Exception:
+                pass   # tried again next poll
         # Polling only sees the latest play, so refetch the list now and then
         # to fill in the plays between polls.
-        if self.want_plays and self.plays_ref != self.play_ref and now - self.plays_fetched > PLAY_REFRESH:
+        if (self.want_plays or live) and self.plays_ref != self.play_ref and now - self.plays_fetched > PLAY_REFRESH:
             try:
                 self.fetch_plays()
             except Exception:

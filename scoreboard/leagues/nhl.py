@@ -173,9 +173,46 @@ def parse_game(data, data_t=0.0, detail=False):
     return g
 
 
+# The latest event's wording in the play-by-play views, and who did it.
+EVENT_TEXT = {"goal": "GOAL", "shot-on-goal": "shot on goal", "missed-shot": "missed shot",
+              "blocked-shot": "blocked shot", "hit": "hit", "faceoff": "faceoff won", "giveaway": "giveaway",
+              "takeaway": "takeaway", "penalty": "penalty"}
+EVENT_PLAYER = ("scoringPlayerId", "shootingPlayerId", "hittingPlayerId", "winningPlayerId",
+                "committedByPlayerId", "playerId")
+
+
+def rink_events(data, g):
+    """(this period's shots and goals [(x, y, side, goal)], the latest event
+    (text, x, side) or None) from a play-by-play response.
+
+    The NHL's coordinates are the arena's, and teams change ends each period,
+    so flip them to keep the home end on the right.
+    """
+    sides = {(data.get(k) or {}).get("id"): s for k, s in (("awayTeam", "away"), ("homeTeam", "home"))}
+    names = {p.get("playerId"): (p.get("lastName") or {}).get("default", "") for p in data.get("rosterSpots", [])}
+    plays = [p for p in data.get("plays", []) if (p.get("details") or {}).get("xCoord") is not None]
+    period = max(((p.get("periodDescriptor") or {}).get("number") or 0 for p in plays), default=0)
+    shots, last = [], None
+    for p in plays:
+        d, kind = p["details"], p.get("typeDescKey")
+        side = sides.get(d.get("eventOwnerTeamId"))
+        flip = -1 if p.get("homeTeamDefendingSide") == "left" else 1
+        x, y = d["xCoord"] * flip, (d.get("yCoord") or 0) * flip
+        if (p.get("periodDescriptor") or {}).get("number") == period and side and kind in ("shot-on-goal", "goal"):
+            shots.append((x, y, side, kind == "goal"))
+        if side and kind in EVENT_TEXT:
+            team = g.away.abbrev if side == "away" else g.home.abbrev
+            who = next((names.get(d[k]) for k in EVENT_PLAYER if d.get(k) in names), "")
+            text = "%s %s" % (team, EVENT_TEXT[kind]) + (" (%s)" % d["shotType"] if d.get("shotType") else "")
+            last = (text + (" · " + who if who else ""), x, side)
+    return shots, last
+
+
 class Poller:
     def __init__(self, game_id):
         self.url = "%s/gamecenter/%s/landing" % (API, game_id)
+        self.pbp = "%s/gamecenter/%s/play-by-play" % (API, game_id)
+        self.want_live = False      # set by the game view while the play-by-play view is on
 
     def poll(self):
         """Return (game, data_time, seconds_until_next_poll)."""
@@ -184,9 +221,15 @@ class Poller:
         age = age or 0.0    # no Age header: fresh from the NHL's servers
         # Timestamp the snapshot when its clock was read, not when we got it.
         data_t = now - age
+        g = parse_game(data, data_t, detail=True)
+        if self.want_live and g.state != "pre":
+            try:   # ~11 KB gzipped: only while the view is on
+                g.rink, g.rink_last = rink_events(fetch_json(self.pbp), g)
+            except Exception:
+                pass   # the view shows an empty rink until the next poll
         # The CDN caches for ~19 s; poll just after the copy expires so every
         # request brings new data.
-        return parse_game(data, data_t, detail=True), data_t, max(2, max_age - age + 1)
+        return g, data_t, max(2, max_age - age + 1)
 
 
 def upcoming(current, seen):
