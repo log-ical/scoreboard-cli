@@ -393,7 +393,7 @@ class GameFeed:
     once: the thread posts nothing more and exits after any request in flight.
     """
 
-    def __init__(self, poller):
+    def __init__(self, poller, live=False):
         self._poller = poller
         self.has_plays = hasattr(poller, "play_history")
         self.has_live = hasattr(poller, "want_live")
@@ -404,7 +404,7 @@ class GameFeed:
         # and answered. Counting means a request made mid-load is never lost.
         self.want_plays, self.asked, self.served = False, 0, 0
         self.older_asked = self.older_served = 0
-        self.want_live = False   # the play-by-play view is on
+        self.want_live = live    # the play-by-play view is on (from the start, so the first poll has its data)
         self.wake, self.stopped = threading.Event(), threading.Event()
         self.thread = threading.Thread(target=self._run, daemon=True)
         self.thread.start()
@@ -491,7 +491,7 @@ class GameFeed:
 
 def game_screen(term, league, listed, logos, colors, menu):
     """Show one game live. Return True to go back to the list, False to quit."""
-    feed = GameFeed(league.open(listed))
+    feed = GameFeed(league.open(listed), live=settings["play_by_play"])
     try:
         return game_view(term, league, feed, logos, colors, menu)
     finally:
@@ -506,7 +506,7 @@ def game_view(term, league, feed, logos, colors, menu):
     prev_score, alert, alert_side, alert_until = None, None, None, 0
     smoother = ClockSmoother()
     expanded, scroll, page, at_end = False, 0, 1, False
-    details, live_on = [], None   # the play-by-play view's NBA plays; whether it's on
+    details, live_on = [], feed.want_live   # the play-by-play view's NBA plays; whether it's on
 
     while True:
         now = time.time()
@@ -530,7 +530,7 @@ def game_view(term, league, feed, logos, colors, menu):
             while len(history) > 2 and history[1][0] < now - MAX_DELAY - 60:
                 history.pop(0)
 
-        if settings["play_by_play"] != live_on:   # on the way in, and after the options menu
+        if settings["play_by_play"] != live_on:   # turned on or off in the options menu
             live_on = settings["play_by_play"]
             feed.show_live(live_on)
         footer = "b back  o options  p plays  %s+/- delay  q quit" % ("v view  " if live_on else "")

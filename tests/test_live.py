@@ -206,9 +206,10 @@ class ScreenTest(unittest.TestCase):
 
     def test_on_in_options_and_v_switches_the_style(self):
         class Poller:
-            want_live = False
+            want_live, polls = False, []
 
             def poll(self):
+                self.polls.append(self.want_live)
                 g = teams_game("nhl", "ANA", "NYI", rink=[(80, 0, "away", False)], rink_last=("ANA hit", 10, "away"))
                 return g, time.time(), 3600
         poller = Poller()
@@ -223,7 +224,7 @@ class ScreenTest(unittest.TestCase):
         t.start()
         try:
             self.assertTrue(wait_for(lambda: term.shown("shot map · v")))
-            self.assertTrue(poller.want_live)
+            self.assertEqual(poller.polls[0], True)   # the first poll already fetches the view's data
             self.assertTrue(term.shown("v view"))
             term.keys.put("v")
             self.assertTrue(wait_for(lambda: term.shown("zone strip · v")))
