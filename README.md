@@ -13,16 +13,18 @@ Live NHL, NBA and NFL scores in the terminal. Python 3 standard library only.
 | Screen    | Keys |
 |-----------|------|
 | Game list | `←/→` or `1/2/3` league · `↑/↓` move · `Enter` watch · `a` live/all · `o` options · `r` refresh · `q` quit |
-| Game view | `p` expand/collapse the play list (`↑/↓` scroll it) · `+`/`-` adjust delay · `o` options · `b`/`Esc` back · `q` quit |
+| Game view | `p` expand/collapse the play list (`↑/↓` scroll, `[`/`]` page) · `+`/`-` adjust delay · `o` options · `b`/`Esc` back · `q` quit |
 | Options   | `↑/↓` choose · `←/→` change · `o`/`Esc` close |
 
 The game view puts the away team on top and the home team on the bottom, each centered in its half,
-with the period and clock in the middle. With **Logo layout** set to horizontal, the teams sit side by
+with the period and clock in the middle. Before a game starts the big clock counts down to the scheduled start
+(`1:04:59`, or `2D 03:15` for days, hours and minutes), and the game list shows `in 2h 05m` for games starting within a day. With **Logo layout** set to horizontal, the teams sit side by
 side (away left, home right) with the clock between them; windows too narrow for that use the vertical layout.
 
-Press `p` to expand the last-play line into a scrollable list of earlier plays, newest first: every goal and
-penalty for the NHL, the last 25 or so plays for the NBA and NFL. ESPN plays are only downloaded while the list
-is open. With a stream delay, the list stops at the play the delayed view is on.
+Press `p` to expand the last-play line into a scrollable list of earlier plays, newest first (in the horizontal
+layout it fills the space between the teams, which stay put): every goal and
+penalty for the NHL; for the NBA and NFL, the newest 25-50 plays, with older pages loaded as you page past
+them (`]`). ESPN plays are only downloaded while the list is open. With a stream delay, the list stops at the play the delayed view is on.
 
 Logos are fitted into a box that is square on screen, using the terminal's cell size in pixels when it
 reports one, so tall and wide logos come out the same size. A red ● on a league tab means it has live games.
@@ -35,6 +37,8 @@ reports one, so tall and wide logos come out the same size. A red ● on a leagu
 - **Show last play**: NHL last goal and assists; NBA and NFL latest play.
 - **Show team stats**: NHL shots on goal; NBA timeouts and team fouls; NFL timeouts.
 - **Show game situation**: NHL power play and empty net; NBA bonus; NFL possession, red zone, down and distance.
+- **Show season records**: next to each team name (NHL W-L-OTL from the standings). Hidden while a delayed view
+  is behind a game that has already ended, since the record would give the result away.
 - **Logo size**, **Logo layout** (vertical or horizontal), **Color mode**, **24-hour start times**
 
 ## Data and the clock

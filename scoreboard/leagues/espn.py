@@ -20,7 +20,7 @@ from ..net import fetch_json, fetch_json_timed
 SITE = "https://site.api.espn.com/apis/site/v2/sports/{sport}/{league}/scoreboard"
 CORE = "https://sports.core.api.espn.com/v2/sports/{sport}/leagues/{league}/events/{id}/competitions/{id}"
 LOGO = "https://a.espncdn.com/combiner/i?img={path}&h=200&w=200"
-PLAY_HISTORY = 25      # plays fetched for the expanded play list
+PLAY_HISTORY = 25      # plays per page of the expanded play list (newest two pages load first)
 PLAY_REFRESH = 20      # seconds between refetches of that list while it's open
 
 
@@ -49,6 +49,7 @@ def _team(c):
         score=score,
         id=str(t.get("id", "")),
         logo_url=_logo(t.get("logo", "")),
+        record=next((r.get("summary", "") for r in c.get("records") or [] if r.get("type") == "total"), ""),
         color=_hex(t.get("color")),
         alt_color=_hex(t.get("alternateColor")),
     )
@@ -227,6 +228,8 @@ class Poller:
         self.want_plays = False     # set by the game view while the play list is open
         self.plays = {}             # seq -> text
         self.plays_fetched, self.plays_ref = 0.0, False
+        # Pages of the API's play list loaded so far (page 1 is the opening tip).
+        self.oldest_page = self.newest_page = None
 
     def play_entry(self, play):
         """(seq, "Q4  6:36  text") for the expanded play list."""
@@ -238,21 +241,49 @@ class Poller:
         clock = (play.get("clock") or {}).get("displayValue", "")
         return seq, "%-3s %5s  %s" % (self.league.labels(period)[1], clock, play.get("text") or "")
 
+    def _entries(self, page):
+        return [e for e in map(self.play_entry, page.get("items", [])) if e]
+
     def fetch_plays(self):
-        """The last PLAY_HISTORY plays (the API pages from the first play on)."""
+        """Load the newest two pages of plays (the API pages from the first play on)."""
         url = self.core + "/plays?limit=%d&page=%%d" % PLAY_HISTORY
-        page = fetch_json(url % 1)
-        last = page.get("pageCount") or 1
-        items = []
-        if last > 1:
-            if last > 2:
-                items = fetch_json(url % (last - 1)).get("items", [])
-            page = fetch_json(url % last)
-        for p in items + page.get("items", []):
-            entry = self.play_entry(p)
-            if entry:
-                self.plays[entry[0]] = entry[1]
+        start = self.newest_page
+        if start is None:
+            count = fetch_json(self.core + "/plays?limit=1").get("count") or 0
+            start = max(1, -(-count // PLAY_HISTORY))
+        pages = {start: fetch_json(url % start)}
+        last = max(start, pages[start].get("pageCount") or 1)
+        want = range(max(1, last - 1), last + 1)
+        for n in want:
+            if n not in pages:
+                pages[n] = fetch_json(url % n)
+        if self.oldest_page is None or want[0] > start + 1:
+            # Nothing loaded yet, or a gap since the last load: start over,
+            # keeping only plays newer than these pages (seen by polling).
+            entries = [e for n in want for e in self._entries(pages[n])]
+            newest = max((seq for seq, _ in entries), default=0)
+            self.plays = {seq: t for seq, t in self.plays.items() if seq > newest}
+            self.oldest_page = want[0]
+        else:
+            entries = [e for n in range(start, last + 1) for e in self._entries(pages[n])]
+        self.plays.update(entries)
+        self.newest_page = last
         self.plays_fetched, self.plays_ref = time.time(), self.play_ref
+
+    def load_older(self):
+        """Load the page of plays before the oldest one loaded."""
+        if not self.oldest_page or self.oldest_page <= 1:
+            return
+        url = self.core + "/plays?limit=%d&page=%d" % (PLAY_HISTORY, self.oldest_page - 1)
+        try:
+            self.plays.update(self._entries(fetch_json(url)))
+            self.oldest_page -= 1
+        except Exception:
+            pass
+
+    def play_history(self):
+        """([(seq, text)] newest first, whether older plays can be loaded)."""
+        return sorted(self.plays.items(), reverse=True), bool(self.oldest_page and self.oldest_page > 1)
 
     def poll(self):
         """Return (game, data_time, seconds_until_next_poll)."""
@@ -280,8 +311,6 @@ class Poller:
                 self.fetch_plays()
             except Exception:
                 self.plays_fetched = now   # retry after PLAY_REFRESH
-        for seq in sorted(self.plays)[:-2 * PLAY_HISTORY]:
-            del self.plays[seq]
 
         g = copy.deepcopy(self.base)
         g.away.stats, g.away.tags, g.home.stats, g.home.tags = [], [], [], []
@@ -315,5 +344,4 @@ class Poller:
         L.decorate(g, situation, play)
         entry = self.play_entry(play) if play else None
         g.play_seq = entry and entry[0]
-        g.plays = sorted(self.plays.items(), reverse=True)
         return g, data_t, L.poll_every

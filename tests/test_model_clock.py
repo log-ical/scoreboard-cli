@@ -2,7 +2,7 @@ import unittest
 
 from tests.helpers import ROOT  # noqa: F401
 from scoreboard.clock import ClockSmoother, clock_target
-from scoreboard.model import Game, Team, is_stale, list_status
+from scoreboard.model import Game, Team, is_stale, list_status, parse_utc
 
 
 def game(period=3, secs=600.0, state="live", away=1, home=1, brk="", running=True, anchor=0.0, cap=None):
@@ -28,6 +28,22 @@ class StaleTest(unittest.TestCase):
         for name, new, last, want in cases:
             with self.subTest(name):
                 self.assertEqual(is_stale(new, last), want)
+
+    def test_countdowns(self):
+        from scoreboard.model import fmt_countdown, fmt_countdown_short, until_start
+        self.assertEqual(fmt_countdown(299), "04:59")
+        self.assertEqual(fmt_countdown(3899), "1:04:59")
+        self.assertEqual(fmt_countdown(2 * 86400 + 3 * 3600 + 15 * 60 + 9), "2D 03:15")
+        self.assertEqual(fmt_countdown_short(30), "in <1m")
+        self.assertEqual(fmt_countdown_short(45 * 60), "in 45m")
+        self.assertEqual(fmt_countdown_short(125 * 60), "in 2h 05m")
+        g = game()
+        g.start_utc = "2026-10-21T23:30:00Z"
+        start = parse_utc(g.start_utc)
+        self.assertEqual(until_start(g, start - 90), 90)
+        self.assertEqual(until_start(g, start + 600), 0)
+        g.start_utc = ""
+        self.assertIsNone(until_start(g))
 
     def test_list_status_hides_overtime(self):
         g = game(state="final")

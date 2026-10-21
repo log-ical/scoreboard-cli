@@ -19,6 +19,21 @@ class NhlTest(unittest.TestCase):
         self.assertTrue(any(" GOAL " in t for t in texts) and any(" PENALTY " in t for t in texts))
         self.assertTrue(texts[0].startswith("OT ") and texts[-1].startswith("1st "))
 
+    def test_records_from_standings(self):
+        saved = nhl.fetch_json, dict(nhl.records), nhl.records_fetched
+        try:
+            nhl.fetch_json = lambda url, timeout=10: {"standings": [
+                {"teamAbbrev": {"default": "SJS"}, "wins": 8, "losses": 2, "otLosses": 1}]}
+            nhl.records_fetched = 0.0
+            nhl.refresh_records()
+            self.assertEqual(nhl._team({"abbrev": "SJS"}).record, "8-2-1")
+            self.assertEqual(nhl._team({"abbrev": "BOS"}).record, "")
+        finally:
+            nhl.fetch_json = saved[0]
+            nhl.records.clear()
+            nhl.records.update(saved[1])
+            nhl.records_fetched = saved[2]
+
     def test_espn_logo_names(self):
         self.assertIn("/sj.png", nhl._team({"abbrev": "SJS"}).logo_url)
         self.assertIn("/bos.png", nhl._team({"abbrev": "BOS"}).logo_url)
@@ -65,6 +80,7 @@ class EspnTest(unittest.TestCase):
                 self.assertIn(g.state, ("pre", "live", "final"))
                 self.assertRegex(g.away.logo_url, r"img=/i/teamlogos/%s/500/[a-z]+\.png" % league.key)
                 self.assertNotIn("/scoreboard/", g.home.logo_url)
+                self.assertRegex(g.away.record, r"^\d+-\d+")
 
     def nba_game(self):
         return self.nba.parse_event(fixture("nba_scoreboard.json")["events"][0])
@@ -146,16 +162,23 @@ class EspnTest(unittest.TestCase):
                 return plain(url)
             espn.fetch_json = fetch
             poller = self.nba.open(self.nba_game())
-            g, _, _ = poller.poll()
+            poller.poll()
             self.assertFalse(any("/plays?" in u for u in urls))
-            self.assertEqual([s for s, _ in g.plays], [int(play["sequenceNumber"])])
+            self.assertEqual(poller.play_history(), ([(702, poller.play_entry(play)[1])], False))
             poller.want_plays = True
-            g, _, _ = poller.poll()
-        seqs = [s for s, _ in g.plays]
-        self.assertEqual(seqs[0], int(play["sequenceNumber"]))
-        self.assertIn(60, seqs)
-        self.assertIn(26, seqs)          # second-to-last page filled in too
-        self.assertEqual(dict(g.plays)[60], "Q2   5:00  play 60")
+            poller.poll()
+            # Only the newest two of the three pages, after a 1-play count probe.
+            self.assertNotIn("page=1", " ".join(urls))
+            plays, older = poller.play_history()
+            seqs = [s for s, _ in plays]
+            self.assertEqual(seqs[0], 702)
+            self.assertEqual(seqs[1:], list(range(60, 25, -1)))
+            self.assertTrue(older)
+            self.assertEqual(dict(plays)[60], "Q2   5:00  play 60")
+            poller.load_older()
+            plays, older = poller.play_history()
+            self.assertEqual(plays[-1][0], 1)
+            self.assertFalse(older)
 
     def test_final_game(self):
         play = fixture("nfl_play_final.json")

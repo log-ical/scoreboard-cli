@@ -1,11 +1,15 @@
 """The game list and the live game view."""
 
+import dataclasses
+import re
 import sys
+import textwrap
 import time
 
 from .clock import ClockSmoother, clock_target
 from .leagues import LEAGUES
-from .model import fmt_clock, fmt_start, headline, is_stale, list_status
+from .model import (fmt_clock, fmt_countdown, fmt_countdown_short, fmt_start, headline, is_stale,
+                    list_status, until_start)
 from .render import big_text, logo_lines, place
 from .settings import LOGO_SCALE, MAX_DELAY, fmt_delay, save_settings, settings, step_delay
 from .term import BOLD, DIM, RESET, REVERSE, center, visible_len
@@ -77,9 +81,11 @@ def game_list_screen(term, menu):
                 else:
                     score = "%3s - %-3s" % (g.away.score, g.home.score)
                 dot = RED + "●" + RESET if g.state == "live" else " "
-                row = " %s %-4s @ %-4s %s   %-14s" % (
+                left = until_start(g) if g.state == "pre" else None
+                soon = fmt_countdown_short(left) if left is not None and left < 24 * 3600 else ""
+                row = " %s %-4s @ %-4s %s   %-14s %-10s" % (
                     dot, g.away.abbrev, g.home.abbrev, score,
-                    list_status(g, hide, settings["clock_24h"]))
+                    list_status(g, hide, settings["clock_24h"]), soon)
                 if i == sel:
                     row = REVERSE + BOLD + row + RESET
                 lines.append(center(row, cols))
@@ -123,6 +129,8 @@ def team_info(team, colors, tint, scale, flash, compact):
         name = REVERSE + BOLD + colors.fg(tint) + " %s %s " % (flash, name) + RESET
     else:
         name = BOLD + colors.fg(tint) + name + RESET
+    if settings["show_record"] and team.record:
+        name += "  " + DIM + "(%s)" % team.record + RESET
     extra = list(team.stats) if settings["show_stats"] else []
     if settings["show_situation"]:
         extra += [YELLOW + t + RESET + DIM for t in team.tags]
@@ -178,60 +186,90 @@ def fit(line, width):
     return line + RESET + " " * max(0, width - visible_len(line))
 
 
-def side_by_side(g, logos, colors, tints, flashes, middle, cols, height, aspect):
-    """Horizontal layout: away | clock | home. None if the window is too narrow."""
+def side_by_side(g, logos, colors, tints, flashes, middle, tail, cols, height, aspect, panel=None):
+    """Horizontal layout: away | clock | home, then `tail` (the last play).
+
+    With `panel` (a function of width and height giving the play list), the
+    list replaces the tail and fills the space between the teams under the
+    clock; the teams stay exactly where they are without it. None if the
+    window is too narrow.
+    """
     mid_w = max(visible_len(m) for m in middle)
     col_w = (cols - mid_w - 8) // 2
     for scale in (2, 1):
         infos = [team_info(t, colors, tint, scale, flash, False)
                  for t, tint, flash in zip((g.away, g.home), tints, flashes)]
         info_w = max(visible_len(s) for inf in infos for s in inf)
-        if info_w <= col_w and (scale == 1 or height - len(infos[0]) >= 15):
+        if info_w <= col_w and (scale == 1 or height - len(tail) - len(infos[0]) >= 15):
             break
     else:
         return None
-    max_logo_rows = height - len(infos[0]) - 1
+    max_logo_rows = height - len(tail) - len(infos[0]) - 1
     logo_rows = int(min(max_logo_rows, col_w * aspect / 2, 32) * LOGO_SCALE[settings["logo_size"]])
     if logo_rows < 4:
         logo_rows = 0
-    columns = []
-    for team, tint, info in zip((g.away, g.home), tints, infos):
-        logo = logo_box(logo_rows, logos, team, colors, tint, aspect)
-        columns.append([fit(l, col_w) for l in logo + [""] + info])
+    columns = [logo_box(logo_rows, logos, team, colors, tint, aspect) + [""] + info
+               for team, tint, info in zip((g.away, g.home), tints, infos)]
+    team_w = max(visible_len(l) for c in columns for l in c)
+    outer = (col_w - team_w) // 2
+    between = 2 * (col_w - team_w - outer) + mid_w + 8   # the gap between the teams
     rows = max(len(columns[0]), len(columns[1]), len(middle))
+    if panel:
+        # The list takes the tail's rows too, and the clock moves to the top.
+        rows += len(tail)
+        middle = middle + [""] + panel(between - 4, rows - len(middle) - 1)
+        tail = []
     mtop = (rows - len(middle)) // 2
     middle = [""] * mtop + middle + [""] * (rows - len(middle) - mtop)
-    blank = " " * col_w
-    columns = [c + [blank] * (rows - len(c)) for c in columns]
-    return [center(a + "    " + fit(m, mid_w) + "    " + h, cols)
-            for a, m, h in zip(columns[0], middle, columns[1])]
+    blank = " " * team_w
+    columns = [[fit(l, team_w) for l in c] + [blank] * (rows - len(c)) for c in columns]
+    return [center(" " * outer + a + fit(m, between) + h + " " * outer, cols)
+            for a, m, h in zip(columns[0], middle, columns[1])] + tail
 
 
-def visible_plays(g, latest):
+def visible_plays(g, loaded=None):
     """Plays up to the one the (possibly delayed) view shows, newest first.
 
-    ESPN plays are fetched while the list is open, so the newest snapshot has
-    the fullest list; cut it at the view's last play so nothing is spoiled.
-    NHL snapshots carry every goal and penalty, so use the view's own.
+    ESPN plays (`loaded`, from the poller) are fetched while the list is open,
+    so cut them at the view's last play so nothing is spoiled. NHL snapshots
+    carry every goal and penalty, so use the view's own.
     """
-    if g.play_seq is None:
+    if loaded is None:
         return [t for _, t in g.plays]
-    return [t for seq, t in latest.plays if seq <= g.play_seq]
+    return [t for seq, t in loaded if g.play_seq is not None and seq <= g.play_seq]
 
 
-def plays_panel(plays, scroll, height, cols, loading):
-    """The expanded play list, at most height rows, scrolled by `scroll`."""
+def wrap_play(text, width):
+    """Wrap a play, continuing under its text rather than its period and clock."""
+    m = re.match(r"\S+\s+\S+\s+", text)
+    indent = len(m.group(0)) if m and len(m.group(0)) < width // 2 else 0
+    return textwrap.wrap(text, width, subsequent_indent=" " * indent) or [""]
+
+
+def plays_panel(plays, scroll, height, width, loading, older=False):
+    """The expanded play list in at most height rows of width columns, left
+    aligned. Returns (rows, scroll clamped to the list, plays shown)."""
     if not plays:
-        return [center(DIM + ("Loading plays…" if loading else "No plays yet.") + RESET, cols)]
-    shown = plays[scroll:scroll + max(1, height - 1)]
-    width = min(cols - 2, max(len(t) for t in shown))
-    rows = []
-    for i, text in enumerate(shown, scroll):
-        text = text[:width].ljust(width)
-        rows.append((BOLD if i == 0 else DIM) + text + RESET)
-    more = len(plays) - scroll - len(shown)
-    note = "%d of %d" % (scroll + 1, len(plays)) + ("  ↓ %d more" % more if more else "")
-    return [center(r, cols) for r in rows] + [center(DIM + note.rjust(width) + RESET, cols)]
+        return [DIM + ("Loading plays…" if loading else "No plays yet.") + RESET], 0, 0
+    width = max(20, min(width, max(len(p) for p in plays)))
+    room = max(1, height - 1)   # the last row says where we are
+    wrapped = [wrap_play(p, width) for p in plays]
+    # Don't scroll past the point where the last plays fill the space.
+    last, used = len(plays), 0
+    while last > 0 and used + len(wrapped[last - 1]) <= room:
+        last -= 1
+        used += len(wrapped[last])
+    scroll = max(0, min(scroll, last))
+    rows, shown = [], 0
+    for i in range(scroll, len(plays)):
+        if rows and len(rows) + len(wrapped[i]) > room:
+            break
+        rows += [(BOLD if i == 0 else DIM) + w.ljust(width) + RESET for w in wrapped[i][:room]]
+        shown += 1
+    note = "%d-%d of %d%s" % (scroll + 1, scroll + shown, len(plays), "+" if older else "")
+    if older and scroll + shown >= len(plays):
+        note += "   ] earlier plays"
+    return rows + [DIM + note.rjust(width) + RESET], scroll, shown
 
 
 def buffering_screen(cols, rows, history, delay, now, err, footer):
@@ -256,7 +294,7 @@ def game_screen(term, league, listed, logos, colors, menu):
     prev_score, alert, alert_side, alert_until = None, None, None, 0
     smoother = ClockSmoother()
     footer = "b back   o options   p plays   +/- delay   q quit"
-    expanded, scroll = False, 0
+    expanded, scroll, page, at_end = False, 0, 1, False
 
     while True:
         now = time.time()
@@ -288,6 +326,12 @@ def game_screen(term, league, listed, logos, colors, menu):
         view_t = now - delay
         g = next((s for t, s in reversed(history) if t <= view_t), None)
 
+        if g is not None and history[-1][1].state == "final" and g.state != "final":
+            # Over in real time but not yet in the delayed view: the season
+            # records may already count the result.
+            g = dataclasses.replace(g, away=dataclasses.replace(g.away, record=""),
+                                    home=dataclasses.replace(g.home, record=""))
+
         if g is None:
             term.draw(buffering_screen(cols, rows, history, delay, now, err, footer))
         else:
@@ -308,7 +352,14 @@ def game_screen(term, league, listed, logos, colors, menu):
             if g.state == "final":
                 clock_str, tag = "00:00", DIM + "final" + RESET
             elif g.state == "pre":
-                clock_str, tag = fmt_clock(secs or 0), DIM + "not started" + RESET
+                # Count down to the start on the viewer's clock (the stream is
+                # delayed too), then wait for the data to say it has begun.
+                left = until_start(g, view_t)
+                if left is None:
+                    clock_str, tag = fmt_clock(secs or 0), DIM + "not started" + RESET
+                else:
+                    clock_str = fmt_countdown(left)
+                    tag = DIM + ("until start" if left else "starting soon") + RESET
             else:
                 clock_str = fmt_clock(secs) if secs is not None else "--:--"
                 tag = RED + "● LIVE" + RESET if g.clock_running else DIM + "clock stopped" + RESET
@@ -329,13 +380,21 @@ def game_screen(term, league, listed, logos, colors, menu):
                 middle.append(BOLD + YELLOW + g.note + RESET)
             last_play = settings["show_last_play"] and g.last_play and not compact
             aspect = term.pixel_aspect()
+            tail = ["", center(DIM + g.last_play[:cols - 2] + RESET, cols)] if last_play else []
+            panel = None
             if expanded:
-                plays = visible_plays(g, history[-1][1])
-                height = max(4, usable // 3)
-                scroll = max(0, min(scroll, len(plays) - (height - 1)))
-                panel = [""] + plays_panel(plays, scroll, height, cols, getattr(poller, "want_plays", False))
-            else:
-                panel = ["", center(DIM + g.last_play[:cols - 2] + RESET, cols)] if last_play else []
+                if hasattr(poller, "play_history"):
+                    loaded, older = poller.play_history()
+                    plays = visible_plays(g, loaded)
+                else:
+                    plays, older = visible_plays(g), False
+                loading = getattr(poller, "want_plays", False)
+
+                def panel(width, height):
+                    nonlocal scroll, page, at_end
+                    rows, scroll, page = plays_panel(plays, scroll, height, width, loading, older)
+                    at_end = scroll + page >= len(plays)
+                    return rows
             tints = (logos.tint(g.away), logos.tint(g.home))
             flashes = [blink_on and alert_side == side and alert for side in ("away", "home")]
 
@@ -344,19 +403,26 @@ def game_screen(term, league, listed, logos, colors, menu):
             if err:
                 title += "  " + YELLOW + "(update failed, retrying)" + RESET
             lines[0] = center(title, cols)
-            lines[rows - 1] = center(DIM + footer + RESET, cols)
+            keys = "↑/↓ scroll   [ ] page   p close   b back   q quit" if expanded else footer
+            lines[rows - 1] = center(DIM + keys + RESET, cols)
 
             body = None
             if settings["layout"] == "horizontal":
-                body = side_by_side(g, logos, colors, tints, flashes, middle, cols, usable - len(panel), aspect)
+                body = side_by_side(g, logos, colors, tints, flashes, middle, tail, cols, usable, aspect, panel)
                 if body:
-                    place(lines, body + panel, 1, rows - 1)
+                    place(lines, body, 1, rows - 1)
 
             if body is None:
                 # Vertical layout (also the fallback when the window is too
                 # narrow for side by side): clock in the middle of the screen,
                 # each team centered in its half above and below it.
-                middle = [center(m, cols) for m in middle] + (panel if expanded else panel[1:])
+                # No room to spare here: the list goes under the clock and the
+                # logos shrink to make room for it.
+                if panel:
+                    middle += [""] + panel(cols - 4, max(4, usable // 3) - 1)
+                elif last_play:
+                    middle.append(DIM + g.last_play[:cols - 2] + RESET)
+                middle = [center(m, cols) for m in middle]
                 half = (usable - len(middle)) // 2
                 max_logo_rows = max(0, half - 1)
                 scale = 2 if max_logo_rows >= 14 else 1
@@ -391,8 +457,11 @@ def game_screen(term, league, listed, logos, colors, menu):
             if hasattr(poller, "want_plays"):
                 poller.want_plays = expanded
                 next_poll = min(next_poll, time.time())   # fetch the list right away
-        elif expanded and key in ("up", "k", "down", "j"):
-            scroll = max(0, scroll + (-1 if key in ("up", "k") else 1))
+        elif expanded and key in ("up", "k", "down", "j", "[", "]"):
+            if key in ("down", "j", "]") and at_end and hasattr(poller, "load_older"):
+                poller.load_older()   # past the loaded plays: fetch the page before them
+            step = page if key in ("[", "]") else 1
+            scroll = max(0, scroll + (-step if key in ("up", "k", "[") else step))
         elif key in ("+", "="):
             settings["delay"] = step_delay(settings["delay"], 1)
             save_settings()

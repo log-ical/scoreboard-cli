@@ -46,12 +46,13 @@ class PlayListTest(unittest.TestCase):
     def test_delayed_view_hides_later_plays(self):
         from scoreboard.model import Game, Team
         from scoreboard.screens import visible_plays
-        latest = Game("nba", "1", "live", Team("A", "A"), Team("B", "B"), play_seq=12,
-                      plays=[(12, "c"), (11, "b"), (10, "a")])
-        delayed = Game("nba", "1", "live", Team("A", "A"), Team("B", "B"), play_seq=11, plays=[(11, "b")])
-        self.assertEqual(visible_plays(delayed, latest), ["b", "a"])
+        loaded = [(12, "c"), (11, "b"), (10, "a")]
+        delayed = Game("nba", "1", "live", Team("A", "A"), Team("B", "B"), play_seq=11)
+        self.assertEqual(visible_plays(delayed, loaded), ["b", "a"])
+        pregame = Game("nba", "1", "pre", Team("A", "A"), Team("B", "B"))
+        self.assertEqual(visible_plays(pregame, loaded), [])
         nhl = Game("nhl", "1", "live", Team("A", "A"), Team("B", "B"), plays=[(None, "goal")])
-        self.assertEqual(visible_plays(nhl, latest), ["goal"])
+        self.assertEqual(visible_plays(nhl), ["goal"])
 
 
 if __name__ == "__main__":

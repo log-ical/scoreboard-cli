@@ -11,7 +11,28 @@ LOGO_URL = "https://a.espncdn.com/combiner/i?img=/i/teamlogos/nhl/500/{}.png&h=2
 # NHL abbreviations that differ from ESPN's logo filenames.
 ESPN_ABBREV = {"SJS": "sj", "TBL": "tb", "NJD": "nj", "LAK": "la", "UTA": "utah"}
 
+STANDINGS_REFRESH = 300   # seconds between standings fetches (for team records)
+
 LIVE_STATES = ("LIVE", "CRIT")
+
+# Season records by abbreviation, from the standings. Fetched with the game
+# list, never while watching, so a game that ends in real time can't show
+# up in a record before a delayed view reaches the final.
+records, records_fetched = {}, 0.0
+
+
+def refresh_records():
+    global records_fetched
+    if time.time() - records_fetched < STANDINGS_REFRESH:
+        return
+    records_fetched = time.time()
+    try:
+        for t in fetch_json(API + "/standings/now").get("standings", []):
+            abbrev = (t.get("teamAbbrev") or {}).get("default")
+            if abbrev:
+                records[abbrev] = "%d-%d-%d" % (t.get("wins", 0), t.get("losses", 0), t.get("otLosses", 0))
+    except Exception:
+        pass
 FINAL_STATES = ("FINAL", "OFF")
 
 
@@ -37,6 +58,7 @@ def _team(t):
         name=("%s %s" % (place, name.get("default", abbrev))).strip(),
         score=t.get("score", 0) or 0,
         id=str(t.get("id", "")),
+        record=records.get(abbrev, ""),
         logo_url=LOGO_URL.format(ESPN_ABBREV.get(abbrev, abbrev.lower())),
     )
 
@@ -156,6 +178,7 @@ class NHL:
     name = "NHL"
 
     def list_games(self):
+        refresh_records()
         return [parse_game(g) for g in fetch_json(API + "/score/now").get("games", [])]
 
     def open(self, game):

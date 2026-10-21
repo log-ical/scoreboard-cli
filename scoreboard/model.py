@@ -14,6 +14,7 @@ class Team:
     logo_url: str = ""
     color: tuple = None            # team color from the league data, if any
     alt_color: tuple = None
+    record: str = ""               # season record, e.g. "12-4" or "8-2-1" (NHL: W-L-OTL)
     stats: list = field(default_factory=list)   # e.g. ["SOG 28"], ["TIMEOUTS 3"]
     tags: list = field(default_factory=list)    # situation, e.g. ["POWER PLAY 1:23"]
 
@@ -67,6 +68,30 @@ def fmt_start(game, h24=False):
 
 def fmt_clock(secs):
     return "%02d:%02d" % divmod(int(secs), 60)
+
+
+def until_start(game, now=None):
+    """Seconds until the scheduled start (never negative), or None if unknown."""
+    ts = parse_utc(game.start_utc)
+    return None if ts is None else max(0, ts - (time.time() if now is None else now))
+
+
+def fmt_countdown(secs):
+    """Big-clock countdown: 04:59, 1:04:59, or 2D 03:15 (days, hours, minutes)."""
+    secs = int(secs)
+    m, s = divmod(secs, 60)
+    h, m = divmod(m, 60)
+    if h >= 24:
+        return "%dD %02d:%02d" % (h // 24, h % 24, m)
+    return "%d:%02d:%02d" % (h, m, s) if h else "%02d:%02d" % (m, s)
+
+
+def fmt_countdown_short(secs):
+    """Game-list countdown: "in 2h 05m", "in 45m", "in <1m"."""
+    m = int(secs) // 60
+    if m < 1:
+        return "in <1m"
+    return "in %dh %02dm" % divmod(m, 60) if m >= 60 else "in %dm" % m
 
 
 def ordinal(n):
