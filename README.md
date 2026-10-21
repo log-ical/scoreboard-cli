@@ -30,8 +30,8 @@ them (`]`). ESPN plays are only downloaded while the list is open. With a stream
 
 Logos are fitted into a box that is square on screen, using the terminal's cell size in pixels when it
 reports one, so tall and wide logos come out the same size. A red ● on a league tab means it has live games.
-The NHL list covers the week (the NHL's current day plus the six after it), NFL the ESPN week, and NBA
-today; lists spanning several days get a heading per day and scroll.
+The NHL and NBA lists cover the week (the league's current day plus the six after it) and NFL the ESPN
+week; each day gets a heading, and the list scrolls. Days ahead are refetched every 10 minutes.
 
 ## Options (saved to `~/.config/scoreboard/settings.json`)
 

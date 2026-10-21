@@ -9,7 +9,7 @@ import unittest
 from tests.helpers import ROOT  # noqa: F401  (sets sys.path)
 from tests.test_concurrency import FakeLeague, FakeMenu, FakeTerm, wait_for
 from scoreboard import screens
-from scoreboard.leagues import nhl
+from scoreboard.leagues import espn, nhl
 from scoreboard.model import Game, Team
 from scoreboard.settings import settings
 
@@ -49,6 +49,61 @@ class NhlWeekTest(unittest.TestCase):
             return {"currentDate": "2026-10-20", "games": [nhl_game(2, "OFF")]}
         nhl.fetch_json = fetch
         self.assertEqual([g.id for g in nhl.NHL().list_games()], ["2"])
+
+
+def espn_event(eid, date="2026-10-21T23:30Z"):
+    side = lambda home, abbrev: {"homeAway": home, "team": {"abbreviation": abbrev}}
+    return {"id": eid, "date": date, "status": {"type": {"state": "pre"}},
+            "competitions": [{"competitors": [side("away", "AAA"), side("home", "BBB")]}]}
+
+
+class EspnWeekTest(unittest.TestCase):
+    def setUp(self):
+        self.saved = espn.fetch_json
+        self.urls, self.down = [], set()
+
+        def fetch(url, timeout=10):
+            self.urls.append(url)
+            day = url.partition("?dates=")[2]
+            if day in self.down:
+                raise OSError("down")
+            if not day:
+                return {"day": {"date": "2026-10-21"}, "events": [espn_event("1"), espn_event("2")]}
+            n = int(day[-2:])
+            # Each day's last game is listed again on the next day, as late games are.
+            return {"events": [espn_event("%d0" % n), espn_event("%d1" % n)] + ([espn_event("2")] if n == 22 else [])}
+        espn.fetch_json = fetch
+
+    def tearDown(self):
+        espn.fetch_json = self.saved
+
+    def test_nba_list_has_the_week_without_repeats(self):
+        games = espn.NBA().list_games()
+        self.assertEqual([g.id for g in games], ["1", "2"] + ["%d%d" % (n, k) for n in range(22, 28) for k in (0, 1)])
+        self.assertEqual(len(self.urls), 7)
+        self.assertTrue(all(u.endswith("?dates=202610%d" % n) for u, n in zip(self.urls[1:], range(22, 28))))
+
+    def test_later_days_are_cached_and_failed_days_retried(self):
+        nba = espn.NBA()
+        self.down = {"20261024"}
+        self.assertEqual(len(nba.list_games()), 2 + 5 * 2)   # one day missing
+        self.urls.clear()
+        self.down = set()
+        self.assertEqual(len(nba.list_games()), 2 + 6 * 2)
+        self.assertEqual(self.urls[1:], [self.urls[0] + "?dates=20261024"])   # only the day that failed
+        self.urls.clear()
+        nba.list_games()
+        self.assertEqual(len(self.urls), 1)   # the later days are cached
+        for d in nba.later:
+            nba.later[d] = (0.0, nba.later[d][1])
+        self.down = {"20261025"}
+        self.urls.clear()
+        self.assertEqual(len(nba.list_games()), 2 + 6 * 2)   # a failed refetch keeps the day
+        self.assertEqual(len(self.urls), 7)
+
+    def test_nfl_list_is_one_request(self):
+        espn.NFL().list_games()
+        self.assertEqual(len(self.urls), 1)
 
 
 class HelpersTest(unittest.TestCase):

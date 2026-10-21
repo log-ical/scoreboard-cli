@@ -10,6 +10,7 @@ its wallclock timestamp says when the clock had the value it shows.
 """
 
 import copy
+import datetime
 import re
 import threading
 import time
@@ -22,6 +23,7 @@ from ..net import fetch_json, fetch_json_timed
 SITE = "https://site.api.espn.com/apis/site/v2/sports/{sport}/{league}/scoreboard"
 CORE = "https://sports.core.api.espn.com/v2/sports/{sport}/leagues/{league}/events/{id}/competitions/{id}"
 LOGO = "https://a.espncdn.com/combiner/i?img={path}&h=200&w=200"
+SLATE_REFRESH = 600    # seconds between refetches of the later days in a week's game list
 PLAY_HISTORY = 25      # plays per page of the expanded play list (newest two pages load first)
 PLAY_REFRESH = 20      # seconds between refetches of that list while it's open
 
@@ -96,6 +98,10 @@ class EspnLeague:
     poll_every = 4         # seconds between polls while watching
     clock_cap = 26         # max seconds the clock can run without a new play
     stop_words = ()
+    slate_days = 1         # days in the game list: the scoreboard's day and the ones after it
+
+    def __init__(self):
+        self.later = {}    # "YYYYMMDD" -> (fetched at, events) for the days after the scoreboard's
 
     # -- labels ------------------------------------------------------------
 
@@ -148,8 +154,42 @@ class EspnLeague:
         return g
 
     def list_games(self):
-        data = fetch_json(SITE.format(sport=self.sport, league=self.league))
-        return [self.parse_event(e) for e in data.get("events", [])]
+        url = SITE.format(sport=self.sport, league=self.league)
+        data = fetch_json(url)
+        events = data.get("events", [])
+        if self.slate_days > 1:
+            events = events + self.later_events(url, (data.get("day") or {}).get("date"))
+        games, seen = [], set()
+        for e in events:
+            if str(e.get("id")) not in seen:   # a late game can be listed on two days
+                seen.add(str(e.get("id")))
+                games.append(self.parse_event(e))
+        return games
+
+    def later_events(self, url, day):
+        """Events on the days after the scoreboard's day, to fill out the week.
+
+        The API takes one date per request, and a schedule days out rarely
+        changes, so each day is refetched only every SLATE_REFRESH seconds;
+        a day whose fetch fails keeps what it had. The days are fetched one
+        after another on the pooled connection (~0.05 s each): opening a
+        connection per day at once sometimes stalls them all for seconds.
+        """
+        try:
+            first = datetime.date.fromisoformat(day)
+        except (TypeError, ValueError):
+            return []
+        dates = [(first + datetime.timedelta(days=n)).strftime("%Y%m%d") for n in range(1, self.slate_days)]
+        now = time.time()
+        due = [d for d in dates if now - self.later.get(d, (0.0, None))[0] > SLATE_REFRESH]
+
+        for d in due:
+            try:
+                self.later[d] = (now, fetch_json(url + "?dates=" + d).get("events", []))
+            except Exception:
+                pass
+        self.later = {d: v for d, v in self.later.items() if d in dates}
+        return [e for d in dates for e in self.later.get(d, (0.0, []))[1]]
 
     def open(self, game):
         return Poller(self, game)
@@ -167,6 +207,7 @@ class EspnLeague:
 class NBA(EspnLeague):
     key, name = "nba", "NBA"
     sport, league = "basketball", "nba"
+    slate_days = 7         # the scoreboard has one day; NFL's already has the week
     period_secs = 12 * 60
     poll_every = 3
     clock_cap = 26         # something happens within a shot clock (24 s)
