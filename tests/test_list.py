@@ -14,6 +14,9 @@ from scoreboard.model import Game, Team
 from scoreboard.settings import settings
 
 
+plain = lambda s: re.sub(r"\x1b\[[0-9;]*m", "", s)
+
+
 def nhl_game(gid, state="FUT", start="2026-10-21T23:30:00Z"):
     return {"id": gid, "gameState": state, "startTimeUTC": start, "venue": {"default": "Arena"},
             "awayTeam": {"abbrev": "AAA", "commonName": {"default": "As"}},
@@ -131,17 +134,117 @@ class HelpersTest(unittest.TestCase):
         self.assertNotIn("more", rows[-1])
         short = ["a", "b"]
         self.assertEqual(screens.scroll_window(short, (1, 1), 5, 10, 20), (short, 0))
+        rows, _ = screens.scroll_window(short, (0, 0), 0, 10, 20, note="▲ earlier")
+        self.assertEqual([r.strip() for r in rows], ["▲ earlier", "a", "b"])
+        rows, top = screens.scroll_window(body, (0, 0), 0, 10, 20, note="▲ earlier")
+        self.assertEqual((rows[0].strip(), rows[1], top), ("▲ earlier", "row 0", 0))
+        rows, top = screens.scroll_window(body, (25, 25), 0, 10, 20, note="▲ earlier")
+        self.assertIn("▲ more", rows[0])   # scrolled down: the usual marker
 
 
 class ListScreenTest(unittest.TestCase):
     def setUp(self):
         self.saved = dict(settings), screens.LEAGUES, screens.save_settings
         screens.save_settings = lambda: None
+        screens._earlier.clear()
+        screens._picked = None
 
     def tearDown(self):
         settings.clear()
         settings.update(self.saved[0])
         screens.LEAGUES, screens.save_settings = self.saved[1], self.saved[2]
+        screens._earlier.clear()
+        screens._picked = None
+
+    def run_list(self, league):
+        screens.LEAGUES = [league]
+        settings.update(league=league.key, delay=0)
+        term, out = FakeTerm(), {}
+        t = threading.Thread(target=lambda: out.update(r=screens.game_list_screen(term, FakeMenu())), daemon=True)
+        t.start()
+        return term, t, out
+
+    def test_up_at_the_top_loads_earlier_game_days(self):
+        def day_games(day, n, state="final"):
+            ts = time.mktime(tuple(int(x) for x in day.split("-")) + (19, 0, 0, 0, 0, -1))
+            return [Game("tst", "%s-%d" % (day, i), state, Team("E%d" % i, "e"), Team("H%d" % i, "h"),
+                         start_utc=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(ts))) for i in range(n)]
+        today = datetime.date.today()
+        days = [(today - datetime.timedelta(days=n)).isoformat() for n in (0, 1, 3)]
+        asked = []
+
+        class Past(FakeLeague):
+            first_day = days[0]
+
+            def list_games(self):
+                return day_games(days[0], 2, "pre")
+
+            def earlier(self, day):
+                asked.append(day)
+                if day == days[0]:
+                    return days[1], day_games(days[1], 3)
+                if day == days[1]:
+                    return days[2], day_games(days[2], 1)
+                return None, []
+        term, t, out = self.run_list(Past(None, "tst"))
+        try:
+            self.assertTrue(wait_for(lambda: term.shown("E0   @ H0")))
+            self.assertIn("▲ earlier", term.draws[-1][1])
+            term.keys.put("up")         # from the first game: the day before
+            self.assertTrue(wait_for(lambda: term.shown("Yesterday")))
+            self.assertEqual(asked, [days[0]])
+            time.sleep(0.1)
+            last = plain(term.draws[-1][1])
+            self.assertLess(last.index("Yesterday"), last.index("Today"))
+            # The selection stepped up into the new day: its last game.
+            selected = [l for l in term.draws[-1][1].split("\n") if "\x1b[7m" in l and "@" in l]
+            self.assertIn("E2   @ H2", plain(selected[0]))
+            for _ in range(3):
+                term.keys.put("up")     # to the top of that day, then once more: the day before
+            self.assertTrue(wait_for(lambda: len(asked) == 2))
+            self.assertEqual(asked[1], days[1])     # skipped the empty day in between
+            self.assertTrue(wait_for(lambda: plain(term.draws[-1][1]).count("@") == 6))
+            for _ in range(2):
+                term.keys.put("up")
+            self.assertTrue(wait_for(lambda: term.shown("no games in the two weeks before")))
+            term.keys.put("up")         # nothing left to ask for
+            time.sleep(0.1)
+            self.assertEqual(len(asked), 3)
+            term.keys.put("enter")      # open the earliest game...
+            t.join(1)
+            self.assertEqual(out["r"][1].id, days[2] + "-0")
+            term, t, out = self.run_list(Past(None, "tst"))   # ...and come back to it
+            self.assertTrue(wait_for(lambda: term.shown("E0   @ H0")))
+            time.sleep(0.1)
+            selected = [l for l in term.draws[-1][1].split("\n") if "\x1b[7m" in l and "@" in l]
+            self.assertIn("E0   @ H0", plain(selected[0]))
+            self.assertIn("FINAL", plain(selected[0]))   # the earliest day's game, not today's E0
+            self.assertEqual(plain(term.draws[-1][1]).count("@"), 6)   # the earlier days are still there
+        finally:
+            term.keys.put("q")
+            t.join(1)
+
+    def test_up_on_live_games_switches_to_all_games(self):
+        class Live(FakeLeague):
+            first_day = datetime.date.today().isoformat()
+
+            def list_games(self):
+                return [Game("tst", "1", "live", Team("LIV", "l"), Team("ONE", "o")),
+                        Game("tst", "2", "pre", Team("PRE", "p"), Team("TWO", "t"))]
+
+            def earlier(self, day):
+                raise AssertionError("not from the live list")
+        term, t, out = self.run_list(Live(None, "tst"))
+        try:
+            self.assertTrue(wait_for(lambda: term.shown("LIV  @ ONE")))
+            self.assertNotIn("PRE", term.draws[-1][1])
+            self.assertIn("▲ all games", term.draws[-1][1])
+            term.keys.put("up")
+            self.assertTrue(wait_for(lambda: "PRE" in term.draws[-1][1]))
+            self.assertIn("▲ earlier", term.draws[-1][1])
+        finally:
+            term.keys.put("q")
+            t.join(1)
 
     def test_week_list_has_day_headings_and_scrolls_to_the_selection(self):
         noon = time.localtime()[:3] + (12, 0, 0, 0, 0, -1)

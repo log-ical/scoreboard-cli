@@ -25,6 +25,7 @@ SITE = "https://site.api.espn.com/apis/site/v2/sports/{sport}/{league}/scoreboar
 CORE = "https://sports.core.api.espn.com/v2/sports/{sport}/leagues/{league}/events/{id}/competitions/{id}"
 LOGO = "https://a.espncdn.com/combiner/i?img={path}&h=200&w=200"
 SLATE_REFRESH = 600    # seconds between refetches of the later days in a week's game list
+EARLIER_DAYS = 14      # how far back "earlier games" looks for a day with games
 PLAY_HISTORY = 25      # plays per page of the expanded play list (newest two pages load first)
 PLAY_REFRESH = 20      # seconds between refetches of that list while it's open
 
@@ -113,6 +114,16 @@ def field_position(spot, g):
     return side, ball, first
 
 
+def _eastern_day(events):
+    """The US Eastern date of the first game: what ESPN's `dates` takes.
+    Games start between ~9:30 and 23:00 Eastern, so six hours back from UTC
+    always lands on the right day."""
+    starts = [t for t in (parse_utc(e.get("date")) for e in events) if t is not None]
+    if not starts:
+        return None
+    return datetime.datetime.fromtimestamp(min(starts) - 6 * 3600, datetime.timezone.utc).date().isoformat()
+
+
 class EspnLeague:
     key = name = sport = league = None
     periods = 4
@@ -126,6 +137,7 @@ class EspnLeague:
 
     def __init__(self):
         self.later = {}    # "YYYYMMDD" -> (fetched at, events) for the days after the scoreboard's
+        self.first_day = None   # the (US Eastern) date the game list starts on, "YYYY-MM-DD"
 
     # -- labels ------------------------------------------------------------
 
@@ -188,6 +200,7 @@ class EspnLeague:
         url = SITE.format(sport=self.sport, league=self.league)
         data = fetch_json(url)
         events = data.get("events", [])
+        self.first_day = (data.get("day") or {}).get("date") or _eastern_day(events) or self.first_day
         if self.slate_days > 1:
             events = events + self.later_events(url, (data.get("day") or {}).get("date"))
         games, seen = [], set()
@@ -196,6 +209,18 @@ class EspnLeague:
                 seen.add(str(e.get("id")))
                 games.append(self.parse_event(e))
         return games
+
+    def earlier(self, day):
+        """(the last day before `day` with games, its games), looking back
+        EARLIER_DAYS days; (None, []) if there were none."""
+        url = SITE.format(sport=self.sport, league=self.league) + "?dates="
+        d = datetime.date.fromisoformat(day)
+        for _ in range(EARLIER_DAYS):
+            d -= datetime.timedelta(days=1)
+            events = fetch_json(url + d.strftime("%Y%m%d")).get("events", [])
+            if events:
+                return d.isoformat(), [self.parse_event(e) for e in events]
+        return None, []
 
     def later_events(self, url, day):
         """Events on the days after the scoreboard's day, to fill out the week.

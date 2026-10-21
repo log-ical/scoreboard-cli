@@ -15,6 +15,7 @@ ESPN_ABBREV = {"SJS": "sj", "TBL": "tb", "NJD": "nj", "LAK": "la", "UTA": "utah"
 
 STANDINGS_REFRESH = 300   # seconds between standings fetches (for team records)
 SLATE_DAYS = 7            # the game list covers the NHL's current day and the six after it
+EARLIER_DAYS = 14         # how far back "earlier games" looks for a day with games
 
 LIVE_STATES = ("LIVE", "CRIT")
 FINAL_STATES = ("FINAL", "OFF")
@@ -252,12 +253,25 @@ def upcoming(current, seen):
 class NHL:
     key = "nhl"
     name = "NHL"
+    first_day = None   # the date the game list starts on ("YYYY-MM-DD"), once it has loaded
 
     def list_games(self):
         refresh_records()   # in the background: the list doesn't wait for it
         data = fetch_json(API + "/score/now")
         games = [parse_game(g) for g in data.get("games", [])]
+        self.first_day = data.get("currentDate") or self.first_day
         return games + upcoming(data.get("currentDate"), {g.id for g in games})
+
+    def earlier(self, day):
+        """(the last day before `day` with games, its games), looking back
+        EARLIER_DAYS days; (None, []) if there were none."""
+        d = datetime.date.fromisoformat(day)
+        for _ in range(EARLIER_DAYS):
+            d -= datetime.timedelta(days=1)
+            games = [parse_game(g) for g in fetch_json(API + "/score/" + d.isoformat()).get("games", [])]
+            if games:
+                return d.isoformat(), games
+        return None, []
 
     def open(self, game):
         return Poller(game.ref["id"])

@@ -33,16 +33,18 @@ def day_label(day):
     return {-1: "Yesterday", 0: "Today", 1: "Tomorrow"}.get(ahead) or "%s %d" % (day.strftime("%a %b"), day.day)
 
 
-def scroll_window(body, want, top, room, cols):
+def scroll_window(body, want, top, room, cols, note=None):
     """The part of body that fits in room rows, scrolled from top just
-    enough to show rows want[0]..want[1]. Returns (rows, new top)."""
-    if len(body) <= room:
-        return body, 0
+    enough to show rows want[0]..want[1]. Returns (rows, new top). `note`
+    (styled) takes the top row while the list isn't scrolled down."""
+    if len(body) <= room - (1 if note else 0):
+        return ([center(note, cols)] if note else []) + body, 0
     room = max(1, room - 2)   # a row above and below says there's more
     top = max(min(top, want[0]), want[1] - room + 1)
     top = max(0, min(top, len(body) - room))
     more = lambda arrow, n: center(DIM + (arrow + " more" if n else "") + RESET, cols)
-    return [more("▲", top)] + body[top:top + room] + [more("▼", len(body) - top - room)], top
+    above = center(note, cols) if note and not top else more("▲", top)
+    return [above] + body[top:top + room] + [more("▼", len(body) - top - room)], top
 
 
 def with_footer(lines, rows, cols, text):
@@ -69,24 +71,32 @@ class ListLoader:
     """Loads game lists on daemon threads, so the screen never waits on them.
 
     Only the screen's thread calls its methods; results come back through
-    a queue as (league key, games, error).
+    a queue as (key, result, error): a league's key with its games, or
+    ("earlier", league key) with an earlier day's (day, games).
     """
 
     def __init__(self):
         self.results = queue.Queue()
-        self.busy = set()      # league keys being loaded
+        self.busy = set()      # keys being loaded
 
     def load(self, league):
         """Start loading league's games, unless that's already under way."""
-        if league.key not in self.busy:
-            self.busy.add(league.key)
-            threading.Thread(target=self._run, args=(league,), daemon=True).start()
+        self._start(league.key, league.list_games)
 
-    def _run(self, league):
+    def load_earlier(self, league, day):
+        """Start loading the last game day before `day`."""
+        self._start(("earlier", league.key), lambda: league.earlier(day))
+
+    def _start(self, key, job):
+        if key not in self.busy:
+            self.busy.add(key)
+            threading.Thread(target=self._run, args=(key, job), daemon=True).start()
+
+    def _run(self, key, job):
         try:
-            self.results.put((league.key, league.list_games(), None))
+            self.results.put((key, job(), None))
         except Exception as e:
-            self.results.put((league.key, None, str(e)))
+            self.results.put((key, None, str(e)))
 
     def done(self):
         """Lists loaded since the last call."""
@@ -95,22 +105,46 @@ class ListLoader:
         return items
 
 
+# Earlier game days loaded with ↑ at the top of a list, kept for the session so
+# they're still there after watching one: league key -> {"pages": [(day,
+# games)] earliest first, "done": nothing earlier, "err": the last failure}.
+_earlier = {}
+_picked = None    # (league key, game id) last opened, to select it again on return
+
+
 def game_list_screen(term, menu):
     """Return (league, game) to watch, or None to quit."""
+    global _picked
     idx = next((i for i, lg in enumerate(LEAGUES) if lg.key == settings["league"]), 0)
     cache = {}          # league key -> (fetched_at, games, error)
     loader = ListLoader()
     show_all, sel, top = False, 0, 0
+    games = []          # the shown league's list, as of the last frame
     while True:
         league = LEAGUES[idx]
-        for key, games, err in loader.done():
+        for key, result, err in loader.done():
+            if isinstance(key, tuple):   # an earlier day
+                state = _earlier.setdefault(key[1], {"pages": [], "done": False, "err": None})
+                state["err"] = err
+                if not err and result[0] is None:
+                    state["done"] = True
+                elif not err:
+                    known = {g.id for _, page in state["pages"] for g in page}
+                    page = [g for g in result[1] if g.id not in known]
+                    state["pages"].insert(0, (result[0], page))
+                    if key[1] == league.key and (show_all or not any(g.state == "live" for g in games)):
+                        # The new day goes above: from the top, step up into it.
+                        sel = len(page) - 1 if sel == 0 else sel + len(page)
+                continue
             if err:
-                games = cache[key][1] if key in cache else []
-            cache[key] = (time.time(), games, err)
+                result = cache[key][1] if key in cache else []
+            cache[key] = (time.time(), result, err)
         entry = cache.get(league.key)
         if entry is None or time.time() - entry[0] > LIST_REFRESH:
             loader.load(league)
         _, games, err = entry or (0, [], None)
+        state = _earlier.setdefault(league.key, {"pages": [], "done": False, "err": None})
+        start = state["pages"][0][0] if state["pages"] else getattr(league, "first_day", None)
 
         cols, rows = term.size()
         if menu.open:
@@ -121,7 +155,17 @@ def game_list_screen(term, menu):
             continue
 
         live = [g for g in games if g.state == "live"]
-        shown = games if (show_all or not live) else live
+        current = {g.id for g in games}
+        everything = [g for _, page in state["pages"] for g in page if g.id not in current] + games
+        shown = everything if (show_all or not live) else live
+        if _picked and _picked[0] == league.key and games:
+            # Back from a game: select it again (it may be an earlier one).
+            ids = [g.id for g in everything]
+            if _picked[1] in ids:
+                show_all = show_all or _picked[1] not in {g.id for g in shown}
+                shown = everything if (show_all or not live) else live
+                sel = [g.id for g in shown].index(_picked[1])
+            _picked = None
         sel = max(0, min(sel, len(shown) - 1))
         hide = settings["hide_list_scores"]
 
@@ -171,7 +215,8 @@ def game_list_screen(term, menu):
                     want = (len(body) - (1 if first else 0), len(body))   # with its day's heading
                 body.append(center(row, cols))
             room = rows - len(lines) - 2 - (1 if settings["delay"] else 0)   # blank, delay, footer
-            window, top = scroll_window(body, want, top, room, cols)
+            window, top = scroll_window(body, want, top, room, cols, earlier_note(state, start, loader, league,
+                                                                                   shown is live))
             lines += window
         lines.append("")
         if settings["delay"]:
@@ -185,7 +230,12 @@ def game_list_screen(term, menu):
         if key == "\x0c":   # Ctrl-L: repaint the whole screen
             term.invalidate()
         elif key in ("up", "k"):
-            sel -= 1
+            if sel > 0:
+                sel -= 1
+            elif live and not show_all:
+                show_all, top = True, 0   # earlier games are in the all-games list
+            elif start and not state["done"] and games:
+                loader.load_earlier(league, start)
         elif key in ("down", "j"):
             sel += 1
         elif key in ("left", "right", "\t", "1", "2", "3"):
@@ -203,7 +253,25 @@ def game_list_screen(term, menu):
         elif key == "o":
             menu.toggle()
         elif key == "enter" and shown:
+            _picked = (league.key, shown[sel].id)
             return league, shown[sel]
+
+
+def earlier_note(state, start, loader, league, live_only):
+    """The top row's "▲ earlier" note: what ↑ from the first game does."""
+    if not start:
+        return None   # the league can't look back
+    if live_only:
+        text = "▲ all games"
+    elif ("earlier", league.key) in loader.busy:
+        text = "▲ loading earlier games…"
+    elif state["done"]:
+        text = "no games in the two weeks before"
+    elif state["err"]:
+        text = "▲ earlier (couldn't load: %s)" % state["err"][:40]
+    else:
+        text = "▲ earlier"
+    return DIM + text + RESET
 
 
 # --------------------------------------------------------------------------

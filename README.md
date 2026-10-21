@@ -13,7 +13,7 @@ Live NHL, NBA and NFL scores in the terminal. Python 3 standard library only.
 
 | Screen    | Keys |
 |-----------|------|
-| Game list | `←/→` or `1/2/3` league · `↑/↓` move · `Enter` watch · `a` live/all · `o` options · `r` refresh · `q` quit |
+| Game list | `←/→` or `1/2/3` league · `↑/↓` move (`↑` at the top: earlier games) · `Enter` watch · `a` live/all · `o` options · `r` refresh · `q` quit |
 | Game view | `p` expand/collapse the play list (`↑/↓` scroll, `[`/`]` page) · `v` next play-by-play view · `+`/`-` adjust delay · `o` options · `b`/`Esc` back · `q` quit |
 | Options   | `↑/↓` choose · `←/→` change · `o`/`Esc` close |
 
@@ -33,6 +33,9 @@ Logos are fitted into a box that is square on screen, using the terminal's cell 
 reports one, so tall and wide logos come out the same size. A red ● on a league tab means it has live games.
 The NHL and NBA lists cover the week (the league's current day plus the six after it) and NFL the ESPN
 week; each day gets a heading, and the list scrolls. Days ahead are refetched every 10 minutes.
+Pressing `↑` on the first game (under the `▲ earlier` marker) loads the last day before it that had games;
+keep pressing to go further back (up to two weeks between game days). With games live, the first `↑`
+switches to all games. Earlier days stay loaded until you quit, and coming back from a game selects it again.
 
 ## Options (saved to `~/.config/scoreboard/settings.json`)
 
