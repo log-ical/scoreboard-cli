@@ -63,9 +63,7 @@ def view(league, style, g, events, width, colors, tints, rules=None, at=None):
     at = len(events) - 1 if at is None else at
     upto, back = events[:at + 1], len(events) - 1 - at
     # Gone back in time: the caption says so, in place of its legend.
-    text = "◀ %d back · → to live" % back
-    note = (YELLOW + text + RESET, len(text)) if back > 0 else None
-    args = (g, upto, w, teams, label, note)
+    args = (g, upto, w, teams, label, back or None)
     if league == "nfl":
         return {"latest": nfl_latest, "bar": yard_bar, "field": full_field}[style](*args)
     if league == "nba":
@@ -124,12 +122,15 @@ def caption(w, left, label, left_len, *shorter):
 
 
 def _caption(w, note, left, label, left_len, *shorter, keep=None):
-    """caption(), with the note on going back in time in place of the legend,
-    and by it `keep` (styled, length): what the legend says of the time shown."""
+    """caption(), with a note on having gone back `note` events in time in
+    place of the legend, and by it `keep` (styled, length): what the legend
+    says of the time shown, kept with a shorter note if need be."""
     if not note:
         return caption(w, left, label, left_len, *shorter)
-    tries = [(note[0] + "  " + keep[0], note[1] + 2 + keep[1])] if keep else []
-    tries += [note, (YELLOW + "◀ → live" + RESET, 8)]
+    full = "◀ %d back · → to live" % note
+    tries = [(YELLOW + t + RESET + "  " + keep[0], len(t) + 2 + keep[1]) for t in (full, "◀ %d back" % note)] \
+        if keep else []
+    tries += [(YELLOW + t + RESET, len(t)) for t in (full, "◀ → live")]
     return caption(w, tries[0][0], label, tries[0][1], *tries[1:])
 
 
@@ -478,11 +479,14 @@ def _event_line(cur, w, teams, extra=""):
 
 
 def _shot_counts(shots, teams, period):
+    """The period's shots by team, "shots in 2nd: FLA 9 · OTT 6". Always
+    labeled: bare, as when gone back in time, they read like the score."""
     count = {s: sum(1 for e in shots if e.side == s) for s in ("away", "home")}
-    text = DIM + period + RESET + " " + teams.name("away") + " %d · " % count["away"] \
+    head = "shots in %s: " % period
+    text = DIM + head + RESET + teams.name("away") + " %d · " % count["away"] \
         + teams.name("home") + " %d" % count["home"]
-    n = len(period) + len(teams.abbrev["away"]) + len(teams.abbrev["home"]) + len(str(count["away"])) \
-        + len(str(count["home"])) + 6
+    n = len(head) + len(teams.abbrev["away"]) + len(teams.abbrev["home"]) + len(str(count["away"])) \
+        + len(str(count["home"])) + 5
     return text, n
 
 
@@ -525,8 +529,7 @@ def zone_strip(g, upto, w, teams, label, note):
         where = " · " + ("neutral zone" if -25 <= x <= 25 else "%s end" % (g.home.abbrev if x > 0 else g.away.abbrev))
     counts, n = _shot_counts([e for e in period if e.kind in ("shot-on-goal", "goal")], teams, name)
     return grid.lines() + [_event_line(cur, w, teams, where),
-                           _caption(w, note, DIM + "shots: " + RESET + counts, label, 7 + n, (counts, n),
-                                    keep=(counts, n))]
+                           _caption(w, note, counts, label, n, keep=(counts, n))]
 
 
 def nhl_latest(g, upto, w, teams, label, note):

@@ -216,7 +216,7 @@ class NhlTest(unittest.TestCase):
             lines = live.view("nhl", style, g, events, 60, COLORS, TINTS)
             self.assertEqual({visible_len(l) for l in lines}, {60})
             text = "\n".join(plain(l) for l in lines)
-            self.assertIn("2nd ANA 1 · NYI 1", text)     # the shown event's period only
+            self.assertIn("shots in 2nd: ANA 1 · NYI 1", text)     # the shown event's period only
             self.assertIn("GOAL · NYI Horvat", text)
         rink = [plain(l) for l in live.view("nhl", "rink", g, events, 60, COLORS, TINTS)]
         middle = next(r for r in rink if "◦" in r)
@@ -246,10 +246,14 @@ class NhlTest(unittest.TestCase):
     def test_going_back_shows_that_events_period_as_it_stood(self):
         g = teams_game("nhl", "ANA", "NYI")
         events = self.events()
-        lines = [plain(l) for l in live.view("nhl", "rink", g, events, 60, COLORS, TINTS, at=0)]
-        self.assertIn("1st ANA 1 · NYI 0", lines[-2] + lines[-1] + "\n".join(lines))
-        self.assertIn("◀ 3 back · → to live", lines[-2])
+        lines = [plain(l) for l in live.view("nhl", "rink", g, events, 72, COLORS, TINTS, at=0)]
+        # The note takes the legend's place; the counts by it still say they're shots, not goals.
+        self.assertIn("◀ 3 back · → to live  shots in 1st: ANA 1 · NYI 0", lines[-2])
         self.assertNotIn("●", "\n".join(lines[:-2]))     # the 2nd-period goal hasn't happened yet
+        for style in ("rink", "zones"):   # narrower, the note is cut short to keep them
+            lines = [plain(l) for l in live.view("nhl", style, g, events, 56, COLORS, TINTS, at=0)]
+            self.assertEqual({len(l) for l in lines}, {56})
+            self.assertIn("◀ 3 back  shots in 1st: ANA 1 · NYI 0", "\n".join(lines[-2:]))
 
 
 class StaticFeed:
