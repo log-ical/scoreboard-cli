@@ -5,6 +5,8 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
-from scoreboard.app import main  # noqa: E402
-
-main()
+try:
+    from scoreboard.app import main  # noqa: E402
+    main()
+except KeyboardInterrupt:   # Ctrl-C while it starts up
+    pass

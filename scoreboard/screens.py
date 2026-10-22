@@ -16,9 +16,11 @@ from .model import (fmt_clock, fmt_countdown, fmt_countdown_short, fmt_start, he
                     list_status, parse_utc, until_start)
 from .render import big_text, logo_lines, place
 from .settings import LOGO_SCALE, MAX_DELAY, fmt_delay, save_settings, settings, step_delay
-from .term import BOLD, DIM, RESET, REVERSE, center, visible_len
+from .term import BOLD, DIM, RESET, REVERSE, center, clip, printable, shorten, visible_len
 
 LIST_REFRESH = 30   # seconds between refreshes of the game list
+MAX_WAIT = 60       # longest the game feed waits between polls, whatever a poller asks
+QUIET_AFTER = 60    # seconds without an update before the game view says so
 YELLOW, RED = "\x1b[33m", "\x1b[31m"
 
 
@@ -33,10 +35,11 @@ def day_label(day):
     return {-1: "Yesterday", 0: "Today", 1: "Tomorrow"}.get(ahead) or "%s %d" % (day.strftime("%a %b"), day.day)
 
 
-def scroll_window(body, want, top, room, cols, note=None):
+def scroll_window(body, want, top, room, cols, note=None, headings=()):
     """The part of body that fits in room rows, scrolled from top just
     enough to show rows want[0]..want[1]. Returns (rows, new top). `note`
-    (styled) takes the top row while the list isn't scrolled down."""
+    (styled) takes the top row while the list isn't scrolled down. A row in
+    `headings` (a day's) isn't shown last with its games all below."""
     if len(body) <= room - (1 if note else 0):
         return ([center(note, cols)] if note else []) + body, 0
     room = max(1, room - 2)   # a row above and below says there's more
@@ -44,7 +47,10 @@ def scroll_window(body, want, top, room, cols, note=None):
     top = max(0, min(top, len(body) - room))
     more = lambda arrow, n: center(DIM + (arrow + " more" if n else "") + RESET, cols)
     above = center(note, cols) if note and not top else more("▲", top)
-    return [above] + body[top:top + room] + [more("▼", len(body) - top - room)], top
+    rows = body[top:top + room]
+    if top + room < len(body) and top + room - 1 in headings and room > 1:
+        rows[-1] = ""
+    return [above] + rows + [more("▼", len(body) - top - room)], top
 
 
 def with_footer(lines, rows, cols, text):
@@ -95,8 +101,8 @@ class ListLoader:
     def _run(self, key, job):
         try:
             self.results.put((key, job(), None))
-        except Exception as e:
-            self.results.put((key, None, str(e)))
+        except Exception as e:   # the text can carry a server's words (an HTTP reason)
+            self.results.put((key, None, printable(str(e))))
 
     def done(self):
         """Lists loaded since the last call."""
@@ -109,13 +115,14 @@ class ListLoader:
 # they're still there after watching one: league key -> {"pages": [(day,
 # games)] earliest first, "shown": how many of the latest pages are on screen
 # (leaving the league hides them again; ↑ brings them back without a fetch),
-# "done": nothing earlier, "err": the last failure}.
+# "done": nothing earlier, "err": the last failure, "anchor": the league's
+# first day when they were loaded, which they join up with}.
 _earlier = {}
 _picked = None    # (league key, game id) last opened, to select it again on return
 
 
 def _earlier_state(key):
-    return _earlier.setdefault(key, {"pages": [], "shown": 0, "done": False, "err": None})
+    return _earlier.setdefault(key, {"pages": [], "shown": 0, "done": False, "err": None, "anchor": None})
 
 
 def start_index(games):
@@ -132,7 +139,7 @@ def game_list_screen(term, menu):
     """Return (league, game) to watch, or None to quit."""
     global _picked
     idx = next((i for i, lg in enumerate(LEAGUES) if lg.key == settings["league"]), 0)
-    cache = {}          # league key -> (fetched_at, games, error)
+    cache = {}          # league key -> (time.monotonic() fetched, games, error)
     loader = ListLoader()
     show_all, sel, top = False, 0, 0
     games = []          # the shown league's list, as of the last frame
@@ -146,6 +153,8 @@ def game_list_screen(term, menu):
                 if not err and result[0] is None:
                     state["done"] = True
                 elif not err:
+                    if not state["pages"]:
+                        state["anchor"] = next(getattr(lg, "first_day", None) for lg in LEAGUES if lg.key == key[1])
                     known = {g.id for _, page in state["pages"] for g in page}
                     state["pages"].insert(0, (result[0], [g for g in result[1] if g.id not in known]))
                     # Shown if it's for the list on screen; else just kept for ↑ later.
@@ -155,12 +164,16 @@ def game_list_screen(term, menu):
                 continue
             if err:
                 result = cache[key][1] if key in cache else []
-            cache[key] = (time.time(), result, err)
+            cache[key] = (time.monotonic(), result, err)
         entry = cache.get(league.key)
-        if entry is None or time.time() - entry[0] > LIST_REFRESH:
+        if entry is None or time.monotonic() - entry[0] > LIST_REFRESH:
             loader.load(league)
         _, games, err = entry or (0, [], None)
         state = _earlier_state(league.key)
+        if state["pages"] and state["anchor"] != getattr(league, "first_day", None):
+            # The league's day (the NFL's week) has moved on: the days kept no
+            # longer join up with the list, and ↑ would skip the ones between.
+            state.update(pages=[], shown=0, done=False, err=None)
         # The day to fetch the game day before, once every kept day is shown.
         start = state["pages"][0][0] if state["pages"] else getattr(league, "first_day", None)
 
@@ -168,7 +181,9 @@ def game_list_screen(term, menu):
         if menu.open:
             term.draw(menu.render(cols, rows))
             key = term.read_key(0.5)
-            if key:
+            if key == "\x0c":   # Ctrl-L repaints here too
+                term.invalidate()
+            elif key:
                 menu.handle_key(key)
             continue
 
@@ -212,12 +227,13 @@ def game_list_screen(term, menu):
             # heading per day, and scrolls to keep the selected game in view.
             days = [start_day(g) for g in shown]
             headings = len(set(days)) > 1
-            body, want = [], (0, 0)
+            body, want, heading_rows = [], (0, 0), set()
             for i, g in enumerate(shown):
                 first = headings and (i == 0 or days[i] != days[i - 1])
                 if first:
                     if body:
                         body.append("")
+                    heading_rows.add(len(body))
                     body.append(center(BOLD + (day_label(days[i]) if days[i] else "Date unknown") + RESET, cols))
                 if g.state == "pre":
                     score = "         "
@@ -227,7 +243,7 @@ def game_list_screen(term, menu):
                     score = "%3s - %-3s" % (g.away.score, g.home.score)
                 dot = RED + "●" + RESET if g.state == "live" else " "
                 left = until_start(g) if g.state == "pre" else None
-                soon = fmt_countdown_short(left) if left is not None and left < 24 * 3600 else ""
+                soon = fmt_countdown_short(left) if left and left < 24 * 3600 else ""   # not once it's due
                 row = " %s %-4s @ %-4s %s   %-14s %-10s" % (
                     dot, g.away.abbrev, g.home.abbrev, score,
                     list_status(g, hide, settings["clock_24h"]), soon)
@@ -238,8 +254,8 @@ def game_list_screen(term, menu):
             room = rows - len(lines) - 2 - (1 if settings["delay"] else 0)   # blank, delay, footer
             if align:   # a fresh list: its starting game (and its day's heading) at the top
                 top, align = want[0], False
-            window, top = scroll_window(body, want, top, room, cols, earlier_note(state, start, loader, league,
-                                                                                   shown is live))
+            note = earlier_note(state, start, loader, league, shown is live)
+            window, top = scroll_window(body, want, top, room, cols, note, heading_rows)
             lines += window
         lines.append("")
         if settings["delay"]:
@@ -264,6 +280,10 @@ def game_list_screen(term, menu):
                 loader.load_earlier(league, start)
         elif key in ("down", "j"):
             sel += 1
+        elif key in ("pgup", "pgdn"):
+            sel = max(0, sel + (rows // 2 if key == "pgdn" else -(rows // 2)))
+        elif key in ("home", "end"):
+            sel = 0 if key == "home" else len(shown) - 1
         elif key in ("left", "right", "\t", "1", "2", "3"):
             if key in ("1", "2", "3"):
                 idx = min(int(key) - 1, len(LEAGUES) - 1)
@@ -314,7 +334,9 @@ def earlier_note(state, start, loader, league, live_only):
 # --------------------------------------------------------------------------
 # Game view
 
-def team_info(team, colors, tint, scale, flash, compact):
+def team_info(team, colors, tint, scale, flash, compact, slim=False):
+    """The name, stats and score in block digits; with slim, one line with
+    the score in plain digits."""
     name = team.name.upper()
     if flash:
         name = REVERSE + BOLD + colors.fg(tint) + " %s %s " % (flash, name) + RESET
@@ -326,6 +348,8 @@ def team_info(team, colors, tint, scale, flash, compact):
     if settings["show_situation"]:
         extra += [YELLOW + t + RESET + DIM for t in team.tags]
     extra = DIM + "   ".join(extra) + RESET if extra else ""
+    if slim:
+        return [name + "  " + BOLD + colors.fg(tint) + str(team.score) + RESET + ("   " + extra if extra else "")]
     if compact:
         info = [name + ("   " + extra if extra else "")]
     else:
@@ -372,7 +396,8 @@ def team_block(logo_rows, info, logos, team, colors, tint, aspect, left_x):
 
 
 def fit(line, width):
-    """Center line in exactly width columns."""
+    """Center line in exactly width columns (cutting it if it's wider)."""
+    line = clip(line, width)
     n = visible_len(line)
     pad = max(0, (width - n) // 2)
     return " " * pad + line + RESET + " " * max(0, width - n - pad)
@@ -420,7 +445,7 @@ def side_by_side(g, logos, colors, tints, flashes, middle, tail, cols, height, a
 
 
 def visible_details(g, details):
-    """The NBA play-by-play view's plays, cut at the view's last play like visible_plays."""
+    """The play-by-play view's events, cut at the view's last play like visible_plays."""
     return [d for d in details if g.play_seq is not None and d.seq <= g.play_seq]
 
 
@@ -471,6 +496,20 @@ def plays_panel(plays, scroll, height, width, loading, older=False):
     return rows + [DIM + note.rjust(width) + RESET], scroll, shown
 
 
+def newer(snap, data_t, history, dated):
+    """Whether a snapshot goes on the end of the history: dated after the last
+    one and not an older cached copy. Copies dated by their age (dated: the
+    NHL's Age header) are ordered by that alone, so a real correction (an
+    overturned goal puts the clock back) isn't taken for a stale copy. Others
+    are judged by what they show, unless they bring a newer play."""
+    if not history:
+        return True
+    t, last = history[-1]
+    if data_t <= t:
+        return False
+    return dated or (snap.play_seq or 0) > (last.play_seq or 0) or not is_stale(snap, last)
+
+
 def buffering_screen(cols, rows, history, delay, now, err, footer):
     lines = [""] * (rows // 2 - 3)
     if not history:
@@ -496,13 +535,20 @@ class GameFeed:
     screen never reads the dict the poller is changing. The screen's requests
     are fields under `lock` plus a wake-up. stop() lets the screen leave at
     once: the thread posts nothing more and exits after any request in flight.
+
+    Only the newest "plays" and "details" are kept (the screen uses no
+    other), and at most MAX_BACKLOG messages wait: while the screen can't
+    draw (Ctrl-S, a stalled ssh), a backlog would grow by a full copy of the
+    game's plays on every poll.
     """
+    MAX_BACKLOG = 1000   # waiting messages; the delay keeps 30 min of snapshots (600 at 3 s)
 
     def __init__(self, poller, live=False):
         self._poller = poller
         self.has_plays = hasattr(poller, "play_history")
         self.has_live = hasattr(poller, "want_live")
         self.results = queue.Queue()
+        self.newest = {}         # "plays" / "details" -> the latest such message, under lock
         self.lock = threading.Lock()
         # Requests, under the lock: play list wanted; list requests made
         # (asked) and answered by a poll (served); older-page requests made
@@ -546,17 +592,33 @@ class GameFeed:
         self.wake.set()
 
     def updates(self):
-        """Results posted since the last call, oldest first."""
-        return drain(self.results)
+        """Results posted since the last call, oldest first (the newest plays
+        and details last)."""
+        items = drain(self.results)
+        with self.lock:
+            newest, self.newest = self.newest, {}
+        return items + list(newest.values())
 
     def _post(self, *msg):
-        if not self.stopped.is_set():
-            self.results.put(msg)
+        if self.stopped.is_set():
+            return
+        if msg[0] in ("plays", "details"):
+            with self.lock:
+                self.newest[msg[0]] = msg
+            return
+        if self.results.qsize() >= self.MAX_BACKLOG:
+            try:
+                self.results.get_nowait()   # the oldest: older than any delay shows
+            except queue.Empty:
+                pass   # the screen just took them all
+        self.results.put(msg)
 
     def _run(self):
+        # Scheduled on the monotonic clock, so setting the wall clock back
+        # can't hold up polling; and a wait never longer than MAX_WAIT.
         poller, next_poll = self._poller, 0.0
         while True:
-            self.wake.wait(max(0.0, next_poll - time.time()))
+            self.wake.wait(min(MAX_WAIT, max(0.0, next_poll - time.monotonic())))
             self.wake.clear()   # before reading the requests, so none is missed
             if self.stopped.is_set():
                 return
@@ -574,15 +636,15 @@ class GameFeed:
                         self.older_served = older
                     if self.stopped.is_set():
                         return            # left while it loaded: don't start a poll too
-                if asked > self.served or time.time() >= next_poll:
-                    started = time.time()
+                if asked > self.served or time.monotonic() >= next_poll:
+                    started = time.monotonic()
                     try:
                         snap, data_t, wait = poller.poll()
                         if live and hasattr(poller, "play_details"):
                             self._post("details", poller.play_details())   # a copy, as with plays
                         self._post("game", snap, data_t)
                     except Exception as e:
-                        self._post("error", str(e))
+                        self._post("error", printable(str(e)))
                         wait = 5
                     next_poll = started + wait
                     if self.has_plays:
@@ -590,8 +652,8 @@ class GameFeed:
                     with self.lock:
                         self.served = asked
             except Exception as e:     # a bug, not the network: show it and carry on
-                self._post("error", str(e))
-                next_poll = time.time() + 5
+                self._post("error", printable(str(e)))
+                next_poll = time.monotonic() + 5
 
 
 def game_screen(term, league, listed, logos, colors, menu):
@@ -607,23 +669,26 @@ def game_view(term, league, feed, logos, colors, menu):
     """game_screen's loop, drawing what feed brings in."""
     history = []          # [(data_time, Game)], oldest first
     err = None
+    arrived = None        # time.monotonic() the last snapshot came in, stale or not
     loaded = ([], False) if feed.has_plays else None   # ESPN: (plays, whether older ones exist)
     prev_score, alert, alert_side, alert_until = None, None, None, 0
-    smoother = ClockSmoother()
+    smoother, shown_delay = ClockSmoother(), settings["delay"]
     expanded, scroll, page, at_end = False, 0, 1, False
-    details, live_on = [], feed.want_live   # the play-by-play view's NBA plays; whether it's on
+    paged_at = None       # how many plays were loaded when the list last paged back by itself
+    details, live_on = [], feed.want_live   # the play-by-play view's events; whether it's on
+    pinned = None         # the view's event when gone back in time with ← (its seq); None: the latest
 
     while True:
         now = time.time()
+        events, at = [], None   # the view's events (to the delayed view's), and which is shown
         pending = feed.plays_pending()   # first: see plays_pending()
         updates = feed.updates()
         for kind, *msg in updates:
             if kind == "game":
                 snap, data_t = msg
-                # A snapshot behind the newest one is a stale cached copy.
-                if not history or (data_t > history[-1][0] and not is_stale(snap, history[-1][1])):
+                if newer(snap, data_t, history, getattr(league, "dated_copies", False)):
                     history.append((data_t, snap))
-                err = None
+                err, arrived = None, time.monotonic()
             elif kind == "error":
                 err = msg[0]
             elif kind == "details":
@@ -638,13 +703,15 @@ def game_view(term, league, feed, logos, colors, menu):
         if settings["play_by_play"] != live_on:   # turned on or off in the options menu
             live_on = settings["play_by_play"]
             feed.show_live(live_on)
-        footer = "b back  o options  p plays  %s+/- delay  q quit" % ("v view  " if live_on else "")
+        footer = "b back  o options  p plays  %s+/- delay  q quit" % ("v view  ←/→ rewind  " if live_on else "")
 
         cols, rows = term.size()
         if menu.open:
             term.draw(menu.render(cols, rows))
             key = term.read_key(0.25)
-            if key:
+            if key == "\x0c":   # Ctrl-L repaints here too
+                term.invalidate()
+            elif key:
                 menu.handle_key(key)
             continue
 
@@ -674,6 +741,8 @@ def game_view(term, league, feed, logos, colors, menu):
             prev_score = score
             blink_on = settings["score_alert"] and now < alert_until and int(now * 2) % 2 == 0
 
+            if delay != shown_delay:   # a new delay: show its clock at once, not catch up to it
+                smoother, shown_delay = ClockSmoother(), delay
             secs = smoother.update(g, clock_target(g, view_t), now)
             if g.state == "final":
                 clock_str, tag = "00:00", DIM + "final" + RESET
@@ -697,7 +766,8 @@ def game_view(term, league, feed, logos, colors, menu):
             usable = rows - 2  # title row and footer row
             # Compact layout when the full one can't fit (score font is 5 rows).
             compact = (usable - 10) // 2 < 9
-            mid_scale = 2 if rows >= 60 and cols >= 90 else 1
+            # (2D 03:15 at scale 2 is 101 columns wide)
+            mid_scale = 2 if rows >= 60 and cols >= 90 and visible_len(big_text(clock_str, 2)[0]) <= cols - 4 else 1
             gap = [] if compact else [""]
             middle = [BOLD + head + RESET] + gap
             middle += [BOLD + r + RESET for r in big_text(clock_str, mid_scale)]
@@ -706,18 +776,27 @@ def game_view(term, league, feed, logos, colors, menu):
                 middle.append(BOLD + YELLOW + g.note + RESET)
             last_play = settings["show_last_play"] and g.last_play and not compact
             aspect = term.pixel_aspect()
-            tail = ["", center(DIM + g.last_play[:cols - 2] + RESET, cols)] if last_play else []
+            tail = ["", center(DIM + shorten(g.last_play, cols - 2) + RESET, cols)] if last_play else []
             tints = (logos.tint(g.away), logos.tint(g.home))
             panel = live_fn = None
             if live_on:
                 style = live.style_of(league.key, settings["live_styles"].get(league.key))
-                shown = visible_details(g, details)
+                events = visible_details(g, details)
+                at = next((i for i, e in enumerate(events) if e.seq == pinned), None)
+                if at is None or at == len(events) - 1:
+                    pinned, at = None, None   # caught up with the latest (or it's not shown any more)
 
                 def live_fn(width):
-                    return live.view(league.key, style, g, shown, width, colors, tints, league)
+                    return live.view(league.key, style, g, events, width, colors, tints, league, at)
             if expanded:
                 if loaded is not None:
                     plays, older = visible_plays(g, loaded[0]), loaded[1]
+                    if not plays and older and not pending and len(loaded[0]) != paged_at:
+                        # A long delay: every play loaded so far is after the
+                        # view's. Page back until some show (while pages bring plays).
+                        paged_at = len(loaded[0])
+                        feed.load_older()
+                        pending = True
                 else:
                     plays, older = visible_plays(g), False
                 loading = pending
@@ -732,23 +811,29 @@ def game_view(term, league, feed, logos, colors, menu):
             plays_fn = panel
             if live_fn:
                 def panel(width, height):
-                    """Between the teams: the play-by-play view, then the play list or the last play."""
+                    """Between the teams: the play-by-play view (which says what
+                    happened last), then the play list; the last play if the view
+                    doesn't fit."""
                     out = live_fn(width)
                     if len(out) > height:
                         out = []
+                    drawn = bool(out)
                     if not out:
                         out = [DIM + "(the play-by-play view needs a bigger window)" + RESET]
                     if plays_fn and height - len(out) - 1 >= 3:
                         out += [""] + plays_fn(width, height - len(out) - 1)
-                    elif not plays_fn and last_play and height - len(out) >= 2:
-                        out += ["", DIM + g.last_play[:width] + RESET]
+                    elif not plays_fn and last_play and not drawn and height - len(out) >= 2:
+                        out += ["", DIM + shorten(g.last_play, width) + RESET]
                     return out
             flashes = [blink_on and alert_side == side and alert for side in ("away", "home")]
 
             lines = [""] * rows
             title = DIM + "%s · %s @ %s · %s" % (league.name, g.away.abbrev, g.home.abbrev, g.venue) + RESET
+            quiet = time.monotonic() - arrived if arrived is not None else 0
             if err:
                 title += "  " + YELLOW + "(update failed, retrying)" + RESET
+            elif quiet > QUIET_AFTER:   # a request that hangs fails no faster than its timeouts
+                title += "  " + YELLOW + "(no update for %ds)" % quiet + RESET
             lines[0] = center(title, cols)
             keys = "↑/↓ scroll   [ ] page   p close   b back   q quit" if expanded else footer
             lines[rows - 1] = center(DIM + keys + RESET, cols)
@@ -763,45 +848,68 @@ def game_view(term, league, feed, logos, colors, menu):
                 # Vertical layout (also the fallback when the window is too
                 # narrow for side by side): clock in the middle of the screen,
                 # each team centered in its half above and below it.
-                # No room to spare here: the list goes under the clock and the
-                # logos shrink to make room for it.
+                # Each team needs its name, stats and score (and the gap to
+                # the middle); the play list and the play-by-play view get
+                # what's left, the list first, and the logos shrink.
+                team_rows = 6 if compact else 9
+                room = usable - len(middle) - 2 * team_rows   # rows the middle can still take
                 list_rows = max(4, usable // 3) if plays_fn else 0
+                slim = list_rows > room
+                if slim:
+                    # Too short (for the list, or at all): the scores go on the
+                    # name lines, since block digits cut short can't be read,
+                    # and the list gets the rest.
+                    room = usable - len(middle) - 2
+                    list_rows = room if plays_fn and room >= 4 else 0
+                room -= list_rows
+                drawn = False   # the view, which says what happened last
                 if live_fn:
                     view = live_fn(min(cols - 4, live.MAX_WIDTH))
-                    # Each team still needs its name, stats and score.
-                    needed = 2 * (6 if compact else 8) + 2
-                    if view and usable - len(middle) - len(view) - 1 - list_rows >= needed:
+                    if view and len(view) + 1 <= room:
                         middle += [""] + view
-                    else:
+                        room -= len(view) + 1
+                        drawn = True
+                    elif room > 0:
                         middle.append(DIM + "(the play-by-play view needs a bigger window)" + RESET)
-                if plays_fn:
+                        room -= 1
+                if list_rows:
                     middle += [""] + plays_fn(cols - 4, list_rows - 1)
-                elif last_play:
-                    middle.append(DIM + g.last_play[:cols - 2] + RESET)
+                elif plays_fn and room > 0:
+                    middle.append(DIM + "(the play list needs a taller window)" + RESET)
+                elif last_play and not drawn and room > 0:
+                    middle.append(DIM + shorten(g.last_play, cols - 2) + RESET)
                 middle = [center(m, cols) for m in middle]
-                half = (usable - len(middle)) // 2
-                max_logo_rows = max(0, half - 1)
-                scale = 2 if max_logo_rows >= 14 else 1
-                infos = [team_info(t, colors, tint, scale, flash, compact)
-                         for t, tint, flash in zip((g.away, g.home), tints, flashes)]
-                info_w = max(visible_len(s) for inf in infos for s in inf)
-                width_cap = (cols - 4 - 4 - info_w) * aspect / 2  # rows whose square box fits
-                logo_rows = int(min(max_logo_rows, width_cap, 32) * LOGO_SCALE[settings["logo_size"]])
-                if logo_rows < 4:
-                    logo_rows = 0
-                box_w = max(logo_width(logo_rows, aspect), 7)
-                left_x = max(0, (cols - (box_w + 4 + info_w)) // 2)
-                away = team_block(logo_rows, infos[0], logos, g.away, colors, tints[0], aspect, left_x)
-                home = team_block(logo_rows, infos[1], logos, g.home, colors, tints[1], aspect, left_x)
-                mid_top = 1 + (usable - len(middle)) // 2
+                if slim:
+                    away, home = ([center(team_info(t, colors, tint, 1, flash, True, slim=True)[0], cols)]
+                                  for t, tint, flash in zip((g.away, g.home), tints, flashes))
+                    margin = 0
+                else:
+                    half = (usable - len(middle)) // 2
+                    max_logo_rows = max(0, half - 1)
+                    scale = 2 if max_logo_rows >= 14 else 1
+                    infos = [team_info(t, colors, tint, scale, flash, compact)
+                             for t, tint, flash in zip((g.away, g.home), tints, flashes)]
+                    info_w = max(visible_len(s) for inf in infos for s in inf)
+                    width_cap = (cols - 4 - 4 - info_w) * aspect / 2  # rows whose square box fits
+                    logo_rows = int(min(max_logo_rows, width_cap, 32) * LOGO_SCALE[settings["logo_size"]])
+                    if logo_rows < 4:
+                        logo_rows = 0
+                    box_w = max(logo_width(logo_rows, aspect), 7)
+                    left_x = max(0, (cols - (box_w + 4 + info_w)) // 2)
+                    away = team_block(logo_rows, infos[0], logos, g.away, colors, tints[0], aspect, left_x)
+                    home = team_block(logo_rows, infos[1], logos, g.home, colors, tints[1], aspect, left_x)
+                    margin = 0 if compact else 1
+                # A middle taller than the window starts under the title and
+                # is cut at the footer, rather than writing over them.
+                mid_top = 1 + max(0, (usable - len(middle)) // 2)
                 mid_bot = mid_top + len(middle)
-                margin = 0 if compact else 1
                 place(lines, away, 1, mid_top - margin)
-                place(lines, middle, mid_top, mid_bot)
+                place(lines, middle, mid_top, min(mid_bot, rows - 1))
                 place(lines, home, mid_bot + margin, rows - 1)
             term.draw(lines)
 
         key = term.read_key(0.25)
+        key = {"pgup": "[", "pgdn": "]"}.get(key, key)   # page the play list
         if key in ("q", "Q"):
             return False
         if key in ("b", "esc", "\x7f"):
@@ -811,8 +919,21 @@ def game_view(term, league, feed, logos, colors, menu):
         elif key == "o":
             menu.toggle()
         elif key == "p":
-            expanded, scroll = not expanded, 0
+            expanded, scroll, paged_at = not expanded, 0, None
             feed.show_plays(expanded)
+        elif live_on and events and (key in ("left", "right", "home", "end") or (not expanded and key in ("[", "]"))):
+            # Back and forth through the view's events; [ ] from score to score
+            # (with the play list closed: open, they page it), Home/End to the ends.
+            i = len(events) - 1 if at is None else at
+            if key in ("left", "right"):
+                i = max(0, i - 1) if key == "left" else i + 1
+            elif key in ("home", "end"):
+                i = 0 if key == "home" else len(events) - 1
+            else:
+                scores = [j for j, e in enumerate(events) if e.kind == "goal" or e.points]
+                i = next((j for j in reversed(scores) if j < i), i) if key == "[" else \
+                    next((j for j in scores if j > i), len(events) - 1)
+            pinned = events[i].seq if i < len(events) - 1 else None
         elif key == "v" and live_on:   # the next style of play-by-play view, remembered per league
             chosen = live.style_of(league.key, settings["live_styles"].get(league.key))
             settings["live_styles"] = {**settings["live_styles"], league.key: live.next_style(league.key, chosen)}

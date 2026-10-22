@@ -3,6 +3,7 @@ import unittest
 from tests.helpers import ROOT  # noqa: F401
 from scoreboard.clock import ClockSmoother, clock_target
 from scoreboard.model import Game, Team, is_stale, list_status, parse_utc
+from scoreboard.screens import newer
 
 
 def game(period=3, secs=600.0, state="live", away=1, home=1, brk="", running=True, anchor=0.0, cap=None):
@@ -50,6 +51,23 @@ class StaleTest(unittest.TestCase):
         self.assertEqual(list_status(g), "FINAL/OT")
         self.assertEqual(list_status(g, hide=True), "FINAL")
         self.assertEqual(list_status(game(secs=65)), "P3  01:05")
+        # Live games too: overtime, a shootout or a break after regulation
+        # would tell a tied game from the rest.
+        for live in (game(secs=65), game(period=4), game(brk="END Q4"), game(brk="INT 3rd")):
+            live.break_short = live.break_label
+            self.assertEqual(list_status(live, hide=True), "LIVE")
+
+
+class NewerTest(unittest.TestCase):
+    def test_corrections_get_through(self):
+        shown = game(secs=600.0, home=2)
+        history = [(100.0, shown)]
+        overturned = game(secs=630.0, home=1)   # the goal taken off, the clock put back
+        self.assertFalse(newer(overturned, 99.0, history, True))      # an older copy, by its date
+        self.assertTrue(newer(overturned, 120.0, history, True))      # NHL: dated copies, so it's real
+        self.assertFalse(newer(overturned, 120.0, history, False))    # ESPN: looks like a stale copy...
+        overturned.play_seq, shown.play_seq = 41, 40
+        self.assertTrue(newer(overturned, 120.0, history, False))     # ...unless it brings a newer play
 
 
 class ClockTest(unittest.TestCase):

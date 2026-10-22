@@ -2,7 +2,9 @@
 
 import json
 import os
+import textwrap
 
+from .logos import write_atomic
 from .term import BOLD, DIM, RESET, REVERSE, center, detect_color_mode, set_symbols
 
 CONFIG_PATH = os.path.join(os.path.expanduser("~"), ".config", "scoreboard", "settings.json")
@@ -63,36 +65,80 @@ HINTS = {
     "show_situation": "NHL: power play. NBA: bonus. NFL: possession, down & distance.",
     "logo_size": "Logos always shrink to fit the window.",
     "symbols": "auto: console-safe on the Linux text console, ASCII without Unicode, full Unicode elsewhere.",
-    "play_by_play": "A live field, court or rink under the clock. In a game, v switches its style.",
+    "play_by_play": "The latest event on a field, court or rink under the clock. In a game, v switches the"
+                    " style and ←/→ go back through the events.",
     "layout": "Vertical: away above home. Horizontal: side by side, clock between.",
 }
 
 LOGO_SCALE = {"small": 0.6, "medium": 0.8, "large": 1.0}
+CHOICES = {k: choices for k, _, choices in OPTIONS if choices}
 
 settings = dict(DEFAULTS)
 
 
+def _valid(key, value):
+    """value if the app can use it for key, else None. A delay out of range is
+    brought into it rather than dropped: no delay would show games early."""
+    if key == "delay":
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or value != value:   # NaN
+            return None
+        return int(max(0, min(MAX_DELAY, value)))
+    if type(value) is not type(DEFAULTS[key]) or (key in CHOICES and value not in CHOICES[key]):
+        return None
+    return value
+
+
 def load_settings():
-    for path in (CONFIG_PATH, OLD_CONFIG_PATH):
-        try:
-            with open(path) as f:
-                saved = json.load(f)
-        except Exception:
-            continue
-        for k, v in saved.items():
-            k = RENAMED.get(k, k)
-            if k in DEFAULTS and type(v) is type(DEFAULTS[k]):
-                settings[k] = v
-        return
+    """Load the saved settings over the defaults, and return what was wrong
+    with them (for a warning). A file that can't be used whole is moved aside
+    to settings.json.bad before anything is saved over it, so a typo in a
+    hand edit doesn't quietly lose the rest (turning off the delay and the
+    hidden scores, of all things)."""
+    try:
+        with open(CONFIG_PATH, encoding="utf-8-sig") as f:   # -sig: a BOM from an editor is fine
+            text, path = f.read(), CONFIG_PATH
+    except FileNotFoundError:
+        try:   # settings from before the app went multi-league (nhl-live)
+            with open(OLD_CONFIG_PATH, encoding="utf-8-sig") as f:
+                text, path = f.read(), None
+        except (OSError, ValueError):
+            return []
+    except (OSError, ValueError) as e:   # unreadable, or not UTF-8
+        return _set_aside([str(e)])
+    try:
+        saved = json.loads(text)
+    except (ValueError, RecursionError) as e:
+        saved, problems = {}, [str(e)]
+    else:
+        problems = [] if isinstance(saved, dict) else ["not a JSON object"]
+    for k, v in (saved.items() if isinstance(saved, dict) else ()):
+        k = RENAMED.get(k, k)
+        if k in DEFAULTS:
+            ok = _valid(k, v)
+            if ok is None:
+                problems.append("%s: %s" % (k, json.dumps(v)[:40]))
+            else:
+                settings[k] = ok
+    return _set_aside(problems) if path and problems else []
+
+
+def _set_aside(problems):
+    try:
+        os.replace(CONFIG_PATH, CONFIG_PATH + ".bad")
+    except OSError:
+        pass
+    return problems
 
 
 def save_settings():
+    """Save the settings; False if that failed. Atomic, so a full disk, a
+    Ctrl-C or another instance saving at once can't leave half a file."""
     try:
-        os.makedirs(os.path.dirname(CONFIG_PATH), exist_ok=True)
-        with open(CONFIG_PATH, "w") as f:
-            json.dump(settings, f, indent=2)
+        # realpath: a settings.json linked from a dotfiles folder stays a link
+        write_atomic(os.path.realpath(CONFIG_PATH), json.dumps(settings, indent=2).encode())
+        return True
     except Exception:
-        pass
+        return False
 
 
 def fmt_delay(secs):
@@ -151,15 +197,24 @@ class OptionsMenu:
 
     def render(self, cols, rows):
         label_w = max(len(o[1]) for o in OPTIONS)
-        lines = ["", center(BOLD + "OPTIONS" + RESET, cols), ""]
+        head = ["", center(BOLD + "OPTIONS" + RESET, cols), ""]
+        options = []
         for i, (k, label, _) in enumerate(OPTIONS):
             val = "‹ %s ›" % fmt_value(k, settings[k])
             row = "  %-*s   %-14s" % (label_w, label, val)
             if i == self.sel:
                 row = REVERSE + BOLD + row + RESET
-            lines.append(center(row, cols))
-        lines.append("")
-        lines.append(center(DIM + HINTS.get(OPTIONS[self.sel][0], "") + RESET, cols))
+            options.append(center(row, cols))
+        hint = textwrap.wrap(HINTS.get(OPTIONS[self.sel][0], ""), max(20, cols - 4))
+        tail = [""] + [center(DIM + h + RESET, cols) for h in hint]
+        # A short window scrolls the options, keeping the one being changed in view.
+        room = max(1, rows - 1 - len(head) - len(tail))
+        if len(options) > room:
+            top = max(0, min(self.sel - room // 2, len(options) - room))
+            options = options[top:top + room]
+        lines = head + options + tail
+        if len(lines) > rows - 1:
+            lines = options + tail   # shorter still: the heading goes first
         while len(lines) < rows - 1:
             lines.append("")
         return lines[:rows - 1] + [center(DIM + "↑/↓ choose   ←/→ change   o/Esc close" + RESET, cols)]

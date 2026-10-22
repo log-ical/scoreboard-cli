@@ -24,6 +24,15 @@ def logo_lines(grid, colors):
     return list(lines)
 
 
+def _intensity(code, cur):
+    """Color escape `code` to follow `cur`. The Linux console takes a bright
+    16-color foreground (9x) as bold plus the dark color, and the bold stays:
+    a dark color after it (3x) needs normal intensity (22) too."""
+    if isinstance(cur, str) and cur.startswith("\x1b[9") and len(code) == 5 and code[2] == "3":
+        return "\x1b[22;" + code[2:]
+    return code
+
+
 def _render_logo(grid, colors):
     """Escapes are only written when the cell needs a different color than
     the terminal already has: the cells look exactly as if each one set its
@@ -40,7 +49,7 @@ def _render_logo(grid, colors):
             if t is not None and b is not None:
                 code = fg(t)
                 if code != cur_fg:
-                    s.append(code)
+                    s.append(_intensity(code, cur_fg))
                     cur_fg = code
                 code = bg(b)
                 if code != cur_bg:
@@ -58,7 +67,7 @@ def _render_logo(grid, colors):
                 continue
             code = fg(t if b is None else b)
             if code != cur_fg:
-                s.append(code)
+                s.append(_intensity(code, cur_fg))
                 cur_fg = code
             s.append("▀" if b is None else "▄")
         lines.append("".join(s) + RESET)
@@ -102,7 +111,9 @@ def big_text(text, scale=1):
 
 
 def place(lines, block, lo, hi):
-    """Center block vertically within rows lo..hi-1, clipping if needed."""
+    """Center block vertically within rows lo..hi-1, clipping if needed. Rows
+    outside lines are never written, however small the window."""
+    lo, hi = max(0, lo), min(hi, len(lines))
     start = lo + max(0, (hi - lo - len(block)) // 2)
     for i, b in enumerate(block):
         if start + i < hi:

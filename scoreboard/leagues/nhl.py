@@ -4,7 +4,7 @@ import datetime
 import threading
 import time
 
-from ..model import Game, Team, ordinal
+from ..model import Event, Game, Team, ordinal, text
 from ..net import fetch_json, fetch_json_timed
 
 API = "https://api-web.nhle.com/v1"
@@ -67,13 +67,13 @@ def _period_labels(pd):
 
 
 def _team(t):
-    abbrev = t["abbrev"]
+    abbrev = text(t["abbrev"])
     name = t.get("commonName") or t.get("name") or {}
-    place = (t.get("placeName") or {}).get("default", "")
+    place = text((t.get("placeName") or {}).get("default"))
     return Team(
         abbrev=abbrev,
-        name=("%s %s" % (place, name.get("default", abbrev))).strip(),
-        score=t.get("score", 0) or 0,
+        name=("%s %s" % (place, text(name.get("default", abbrev)))).strip(),
+        score=int(t.get("score") or 0),   # here, not in the drawing, if it isn't a number
         id=str(t.get("id", "")),
         record=records.get(abbrev, ""),
         logo_url=LOGO_URL.format(ESPN_ABBREV.get(abbrev, abbrev.lower())),
@@ -119,23 +119,28 @@ def _plays(data):
             pd = p.get("periodDescriptor") or {}
             for e in p.get(items, []):
                 if kind == "GOAL":
-                    text = _goal_text(e)
+                    entry = _goal_text(e)
                 else:
-                    who = (e.get("committedByPlayer") or {}).get("lastName") or {}
-                    text = "%s %s · %s (%s min)" % (
-                        (e.get("teamAbbrev") or {}).get("default", ""), who.get("default") or "bench",
+                    who = e.get("committedByPlayer") or {}
+                    first = text((who.get("firstName") or {}).get("default"))
+                    last = text((who.get("lastName") or {}).get("default"))
+                    # "B. Tkachuk", as goals name players: brothers on a team are two people.
+                    name = ("%s. %s" % (first[0], last) if first and last else last) or "bench"
+                    entry = "%s %s · %s (%s min)" % (
+                        (e.get("teamAbbrev") or {}).get("default", ""), name,
                         (e.get("descKey") or "").replace("-", " "), e.get("duration", ""))
                 t = e.get("timeInPeriod", "")
                 events.append(((pd.get("number") or 0, t.zfill(5)),
-                               "%-4s %5s  %-7s %s" % (_period_labels(pd)[1], t, kind, text)))
+                               "%-4s %5s  %-7s %s" % (_period_labels(pd)[1], t, kind, entry)))
     events.sort(key=lambda x: x[0], reverse=True)
-    return [(None, text) for _, text in events]
+    return [(None, entry) for _, entry in events]
 
 
 def parse_game(data, data_t=0.0, detail=False):
     """Build a Game from a score/now entry or (detail=True) a landing response."""
     state = data.get("gameState", "")
     clock = data.get("clock") or {}
+    secs = clock.get("secondsRemaining")
     pd = data.get("periodDescriptor") or {}
     label, short = _period_labels(pd)
     g = Game(
@@ -147,12 +152,12 @@ def parse_game(data, data_t=0.0, detail=False):
         period=pd.get("number") or 0,
         period_label=label,
         short_period=short,
-        clock_secs=clock.get("secondsRemaining"),
+        clock_secs=float(secs) if secs is not None else None,
         # The intermission clock runs even though "running" is false.
         clock_running=bool(clock.get("running") or clock.get("inIntermission")),
         clock_anchor=data_t,
         start_utc=data.get("startTimeUTC", ""),
-        venue=(data.get("venue") or {}).get("default", ""),
+        venue=text((data.get("venue") or {}).get("default")),
         ref={"id": data["id"]},
     )
     if clock.get("inIntermission"):
@@ -174,39 +179,76 @@ def parse_game(data, data_t=0.0, detail=False):
     return g
 
 
-# The latest event's wording in the play-by-play views, and who did it.
-EVENT_TEXT = {"goal": "GOAL", "shot-on-goal": "shot on goal", "missed-shot": "missed shot",
-              "blocked-shot": "blocked shot", "hit": "hit", "faceoff": "faceoff won", "giveaway": "giveaway",
-              "takeaway": "takeaway", "penalty": "penalty"}
-EVENT_PLAYER = ("scoringPlayerId", "shootingPlayerId", "hittingPlayerId", "winningPlayerId",
-                "committedByPlayerId", "playerId")
+# The events the play-by-play views draw, and how each is put in words
+# from its details (players by id, from the roster).
+EVENT_KINDS = ("faceoff", "hit", "giveaway", "takeaway", "shot-on-goal", "missed-shot", "blocked-shot", "goal",
+               "penalty")
 
 
-def rink_events(data, g):
-    """(this period's shots and goals [(x, y, side, goal)], the latest event
-    (text, x, side) or None) from a play-by-play response.
+def _event_text(kind, d, name):
+    """What happened, after the team: "Reinhart (wrist) · saved by Ullmark"."""
+    shot = " (%s)" % d["shotType"] if d.get("shotType") else ""
+    if kind == "faceoff":
+        return "%s wins it" % name("winningPlayerId")
+    if kind == "hit":
+        return "%s on %s" % (name("hittingPlayerId"), name("hitteePlayerId"))
+    if kind in ("giveaway", "takeaway"):
+        return name("playerId")
+    if kind == "shot-on-goal":
+        return "%s%s · saved by %s" % (name("shootingPlayerId"), shot, name("goalieInNetId"))
+    if kind == "missed-shot":
+        return "%s%s · %s" % (name("shootingPlayerId"), shot, text(d.get("reason")).replace("-", " "))
+    if kind == "blocked-shot":   # the blocking team's event
+        return "%s blocks %s" % (name("blockingPlayerId"), name("shootingPlayerId"))
+    if kind == "goal":
+        assists = [name(k) for k in ("assist1PlayerId", "assist2PlayerId") if d.get(k)]
+        return name("scoringPlayerId") + shot + " · " + (", ".join(assists) if assists else "unassisted")
+    return "%s · %s (%s min)" % (name("committedByPlayerId"), text(d.get("descKey")).replace("-", " "),
+                                 d.get("duration", ""))
+
+
+def _played_by(p, upto):
+    """True if play p happened by `upto`: (period, seconds left on its clock)."""
+    period = (p.get("periodDescriptor") or {}).get("number") or 0
+    if period != upto[0]:
+        return period < upto[0]
+    m, _, s = (p.get("timeRemaining") or "").partition(":")
+    return m.isdigit() and s.isdigit() and int(m) * 60 + int(s) >= upto[1]
+
+
+def rink_events(data, upto=None):
+    """([Event] of the whole game, oldest first; the seq of the last one
+    played by `upto`, (period, seconds left), or of the last one at all)
+    from a play-by-play response. Only events with a place on the ice.
 
     The NHL's coordinates are the arena's, and teams change ends each period,
     so flip them to keep the home end on the right.
     """
     sides = {(data.get(k) or {}).get("id"): s for k, s in (("awayTeam", "away"), ("homeTeam", "home"))}
-    names = {p.get("playerId"): (p.get("lastName") or {}).get("default", "") for p in data.get("rosterSpots", [])}
-    plays = [p for p in data.get("plays", []) if (p.get("details") or {}).get("xCoord") is not None]
-    period = max(((p.get("periodDescriptor") or {}).get("number") or 0 for p in plays), default=0)
-    shots, last = [], None
-    for p in plays:
-        d, kind = p["details"], p.get("typeDescKey")
+    names = {}   # "M. Tkachuk": brothers can be teammates
+    for p in data.get("rosterSpots", []):
+        first, last = text((p.get("firstName") or {}).get("default")), text((p.get("lastName") or {}).get("default"))
+        names[p.get("playerId")] = "%s. %s" % (first[0], last) if first and last else last
+    events, cut, past = [], None, False
+    for i, p in enumerate(data.get("plays", [])):
+        d, kind = p.get("details") or {}, p.get("typeDescKey")
         side = sides.get(d.get("eventOwnerTeamId"))
+        if kind not in EVENT_KINDS or not side or not isinstance(d.get("xCoord"), (int, float)):
+            continue
         flip = -1 if p.get("homeTeamDefendingSide") == "left" else 1
-        x, y = d["xCoord"] * flip, (d.get("yCoord") or 0) * flip
-        if (p.get("periodDescriptor") or {}).get("number") == period and side and kind in ("shot-on-goal", "goal"):
-            shots.append((x, y, side, kind == "goal"))
-        if side and kind in EVENT_TEXT:
-            team = g.away.abbrev if side == "away" else g.home.abbrev
-            who = next((names.get(d[k]) for k in EVENT_PLAYER if d.get(k) in names), "")
-            text = "%s %s" % (team, EVENT_TEXT[kind]) + (" (%s)" % d["shotType"] if d.get("shotType") else "")
-            last = (text + (" · " + who if who else ""), x, side)
-    return shots, last
+        y = d.get("yCoord") if isinstance(d.get("yCoord"), (int, float)) else 0
+        pd = p.get("periodDescriptor") or {}
+        seq = p.get("sortOrder") if isinstance(p.get("sortOrder"), int) else i
+        events.append(Event(seq, None, None, None, None, period=pd.get("number") or 0,
+                            when="%s %s" % (_period_labels(pd)[1], text(p.get("timeInPeriod"))), side=side, kind=kind,
+                            text=_event_text(kind, d, lambda k: names.get(d.get(k)) or "?"),
+                            xy=(d["xCoord"] * flip, y * flip)))
+        # The cut is before the first event after `upto`: nothing past it
+        # shows, even listed with an earlier time.
+        past = past or bool(upto and not _played_by(p, upto))
+        if not past:
+            cut = seq
+    return events, cut
 
 
 class Poller:
@@ -214,6 +256,7 @@ class Poller:
         self.url = "%s/gamecenter/%s/landing" % (API, game_id)
         self.pbp = "%s/gamecenter/%s/play-by-play" % (API, game_id)
         self.want_live = False      # set by the game view while the play-by-play view is on
+        self.events, self.cut = [], None   # the play-by-play's events, and the last one played
 
     def poll(self):
         """Return (game, data_time, seconds_until_next_poll)."""
@@ -224,13 +267,27 @@ class Poller:
         data_t = now - age
         g = parse_game(data, data_t, detail=True)
         if self.want_live and g.state != "pre":
+            # The CDN caches the play-by-play apart from the landing, and its
+            # copy can be the newer one: the snapshot shows events up to the
+            # landing's game time only, or a delayed view could show a goal
+            # before its score does. (Breaks and finals: the period is over.)
+            live = g.state == "live" and not g.break_label and g.clock_secs is not None
             try:   # ~11 KB gzipped: only while the view is on
-                g.rink, g.rink_last = rink_events(fetch_json(self.pbp), g)
+                self.events, self.cut = rink_events(fetch_json(self.pbp), (g.period, g.clock_secs) if live else None)
             except Exception:
-                pass   # the view shows an empty rink until the next poll
+                pass   # the last ones fetched stay, cut where they were
+            g.play_seq = self.cut
+        # The API reports the clock but not between copies, so the local clock
+        # runs on for at most a copy's lifetime and a poll; without a cap, a
+        # stalled network or a laptop's sleep would run it down to 0:00.
+        g.clock_cap = max_age + 20
         # The CDN caches for ~19 s; poll just after the copy expires so every
-        # request brings new data.
-        return g, data_t, max(2, max_age - age + 1)
+        # request brings new data (but at least every minute, whatever it says).
+        return g, data_t, min(60, max(2, max_age - age + 1))
+
+    def play_details(self):
+        """[Event] for the play-by-play views, a copy for the game view."""
+        return list(self.events)
 
 
 def upcoming(current, seen):
@@ -254,6 +311,7 @@ class NHL:
     key = "nhl"
     name = "NHL"
     first_day = None   # the date the game list starts on ("YYYY-MM-DD"), once it has loaded
+    dated_copies = True   # snapshots are dated by their copy's Age: a later one is newer data
 
     def list_games(self):
         refresh_records()   # in the background: the list doesn't wait for it

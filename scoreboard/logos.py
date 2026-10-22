@@ -32,7 +32,8 @@ def _remember(cache, key, value, limit):
 
 
 def cache_path(url):
-    return os.path.join(CACHE_DIR, hashlib.md5(url.encode()).hexdigest()[:16] + ".png")
+    # surrogatepass: a lone surrogate (from bad JSON) mustn't crash the drawing
+    return os.path.join(CACHE_DIR, hashlib.md5(url.encode("utf-8", "surrogatepass")).hexdigest()[:16] + ".png")
 
 
 def write_atomic(path, data):

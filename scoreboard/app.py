@@ -6,7 +6,7 @@ import sys
 from .leagues import BY_KEY
 from .logos import LogoStore
 from .screens import game_list_screen, game_screen
-from .settings import MAX_DELAY, OptionsMenu, load_settings, save_settings, settings
+from .settings import CONFIG_PATH, MAX_DELAY, OptionsMenu, load_settings, save_settings, settings
 from .term import SYMBOL_SETS, Colors, Terminal, detect_color_mode, set_symbols
 
 
@@ -24,12 +24,16 @@ def main(argv=None):
     if not sys.stdin.isatty():
         sys.exit("scoreboard needs an interactive terminal.")
 
-    load_settings()
+    problems = load_settings()
+    if problems:   # printed before the screen is taken over, so it's there after quitting
+        print("scoreboard: %s: %s. Using the defaults for those; the file is kept as settings.json.bad."
+              % (CONFIG_PATH, "; ".join(problems)), file=sys.stderr)
     if args.league:
         settings["league"] = args.league
     if args.delay is not None:
         settings["delay"] = max(0, min(MAX_DELAY, args.delay))
-    save_settings()
+    if not save_settings() and args.delay is not None:
+        print("scoreboard: couldn't save the delay to %s." % CONFIG_PATH, file=sys.stderr)
     mode = args.color or (settings["color"] if settings["color"] != "auto" else detect_color_mode())
     colors = Colors(mode)
     set_symbols(args.symbols or settings["symbols"])
@@ -47,3 +51,5 @@ def main(argv=None):
                     break
     except KeyboardInterrupt:
         pass
+    finally:
+        save_settings()   # an option changed in a menu still open (Ctrl-C, a signal) isn't lost

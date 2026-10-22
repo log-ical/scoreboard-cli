@@ -15,7 +15,7 @@ from scoreboard.settings import settings
 from scoreboard.term import Colors
 
 
-def wait_for(cond, timeout=2.0):
+def wait_for(cond, timeout=10.0):   # generous: it returns as soon as cond holds, and CI can be slow
     end = time.time() + timeout
     while not cond():
         if time.time() > end:
@@ -329,8 +329,8 @@ class WorkerTest(unittest.TestCase):
         feed = screens.GameFeed(poller)
         try:
             feed.show_plays(True)
-            lists, end = 0, time.time() + 0.3
-            while time.time() < end:
+            lists, end = 0, time.time() + 10   # until there's been plenty of churn (fast unless the CPU is busy)
+            while time.time() < end and (lists <= 10 or n[0] <= 20):
                 feed.load_older()
                 for kind, *msg in feed.updates():
                     self.assertNotEqual(kind, "error", msg)

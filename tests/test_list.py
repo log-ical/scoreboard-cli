@@ -164,6 +164,34 @@ class ListScreenTest(unittest.TestCase):
         t.start()
         return term, t, out
 
+    def test_earlier_days_start_over_when_the_league_day_moves_on(self):
+        """Days kept from before the league's day changes would leave a gap:
+        the day that just ended would never be shown or fetched."""
+        today = datetime.date.today()
+        days = [(today - datetime.timedelta(days=n)).isoformat() for n in (0, 1, 2)]
+        asked = []
+
+        class Rolling(FakeLeague):
+            first_day = days[1]
+
+            def list_games(self):
+                return []
+
+            def earlier(self, day):
+                asked.append(day)
+                return days[days.index(day) + 1] if day != days[-1] else None, []
+        league = Rolling(None, "tst")
+        term, t, out = self.run_list(league)
+        try:
+            self.assertTrue(wait_for(lambda: term.shown("No TST games")))
+            screens._earlier_state("tst").update(pages=[(days[2], [])], anchor=days[1])   # kept from yesterday
+            league.first_day = days[0]   # the next morning
+            time.sleep(0.1)
+            self.assertEqual(screens._earlier_state("tst")["pages"], [])
+        finally:
+            term.keys.put("q")
+            t.join(1)
+
     def test_up_at_the_top_loads_earlier_game_days(self):
         def day_games(day, n, state="final"):
             ts = time.mktime(tuple(int(x) for x in day.split("-")) + (19, 0, 0, 0, 0, -1))

@@ -1,4 +1,5 @@
 import copy
+import time
 import unittest
 
 from tests.helpers import ROOT, fixture  # noqa: F401
@@ -38,6 +39,20 @@ class NhlTest(unittest.TestCase):
     def test_espn_logo_names(self):
         self.assertIn("/sj.png", nhl._team({"abbrev": "SJS"}).logo_url)
         self.assertIn("/bos.png", nhl._team({"abbrev": "BOS"}).logo_url)
+
+    def test_odd_types_are_coerced_or_fail_in_the_parser(self):
+        """Wrong JSON types must not reach the drawing (which runs on the
+        screen's thread, where an error ends the app)."""
+        self.assertEqual(nhl._team({"abbrev": "BOS", "score": "3"}).score, 3)
+        data = fixture("nhl_landing.json")
+        data["clock"]["secondsRemaining"] = "600"
+        self.assertEqual(nhl.parse_game(data).clock_secs, 600.0)
+        data["clock"]["secondsRemaining"] = "ten"
+        with self.assertRaises(ValueError):
+            nhl.parse_game(data)
+        pbp = {"homeTeam": {"id": 1}, "plays": [{"typeDescKey": "goal", "details": {
+            "xCoord": "50", "yCoord": 0, "eventOwnerTeamId": 1}}]}
+        self.assertEqual(nhl.rink_events(pbp), ([], None))
 
 
 class FakeApi:
@@ -83,6 +98,34 @@ class EspnTest(unittest.TestCase):
                 self.assertNotIn("/scoreboard/", g.home.logo_url)
                 self.assertRegex(g.away.record, r"^\d+-\d+")
 
+    def test_odd_types_become_text(self):
+        e = copy.deepcopy(fixture("nba_scoreboard.json")["events"][0])
+        team = e["competitions"][0]["competitors"][0]["team"]
+        team["abbreviation"], team["displayName"] = None, 7
+        e["competitions"][0]["venue"] = {"fullName": None}
+        g = self.nba.parse_event(e)
+        side = g.home if e["competitions"][0]["competitors"][0]["homeAway"] == "home" else g.away
+        self.assertEqual((side.abbrev, side.name, g.venue), ("?", "7", ""))
+        play = dict(fixture("nfl_play_running.json"), text=12)
+        g = self.nfl.parse_event(fixture("nfl_scoreboard.json")["events"][0])
+        self.nfl.decorate(g, {}, play)
+        self.assertEqual(g.last_play, "Last play: 12")
+
+    def test_snapshot_is_never_dated_before_its_play(self):
+        """ESPN sends no Age, and its max-age counts down: a snapshot dated by
+        a guess at the status copy's age could hold a play from after that
+        date, and a delayed view would show it early."""
+        play = dict(fixture("nba_play.json"), wallclock=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
+        with FakeApi(live_status(2, 300.0), LAST_PLAY, play) as api:
+            espn.fetch_json_timed = lambda url, timeout=10: (api.fetch_json(url), None, 12)
+            before = time.time()
+            _, data_t, _ = self.nba.open(self.nba_game()).poll()
+        self.assertGreaterEqual(data_t, before)
+
+    def test_logo_path_cannot_add_query_parameters(self):
+        url = espn._logo("https://a.espncdn.com/i/teamlogos/nba/500/bos.png&h=4000&w=4000")
+        self.assertTrue(url.endswith("bos.png%26h%3D4000%26w%3D4000&h=200&w=200"), url)
+
     def nba_game(self):
         return self.nba.parse_event(fixture("nba_scoreboard.json")["events"][0])
 
@@ -95,6 +138,34 @@ class EspnTest(unittest.TestCase):
         self.assertEqual((g.away.score, g.home.score), (play["awayScore"], play["homeScore"]))
         self.assertTrue(any(s.startswith("TIMEOUTS") for s in g.home.stats))
         self.assertEqual(wait, 3)
+
+    def test_status_copy_older_than_the_play_does_not_start_the_clock(self):
+        """The status copy that comes with a stoppage play can be older than
+        the play; the next, fresh one mustn't look like the clock moved."""
+        play = copy.deepcopy(fixture("nba_play.json"))
+        play["type"]["text"], play["clock"]["value"], play["period"]["number"] = "Full Timeout", 300.0, 3
+        with FakeApi(live_status(3, 303.0), dict(LAST_PLAY), play) as api:
+            poller = self.nba.open(self.nba_game())
+            running = []
+            for secs in (303.0, 300.0, 300.0, 295.0):   # stale copy, fresh ones, then play resumes
+                api.docs["/status"] = live_status(3, secs)
+                running.append(poller.poll()[0].clock_running)
+        self.assertEqual(running, [False, False, False, True])
+
+    def test_nfl_incompletion_with_a_stale_status_stays_stopped(self):
+        """NFL plays carry the clock at the snap: an incompletion snapped at
+        14:33 stops it at 14:29. A status copy from before the snap doesn't
+        count; the stopped clock after it is the mark to move from."""
+        play = copy.deepcopy(fixture("nfl_play_incomplete.json"))
+        play["clock"]["value"], play["period"]["number"] = 873.0, 1
+        g = self.nfl.parse_event(fixture("nfl_scoreboard.json")["events"][0])
+        with FakeApi(live_status(1, 880.0), dict(LAST_PLAY), play) as api:
+            poller = self.nfl.open(g)
+            running = []
+            for secs in (880.0, 869.0, 869.0, 864.0, 859.0):
+                api.docs["/status"] = live_status(1, secs)
+                running.append(poller.poll()[0].clock_running)
+        self.assertEqual(running, [False, False, False, True, True])
 
     def test_nba_running_play_anchors_at_wallclock(self):
         play = copy.deepcopy(fixture("nba_play.json"))

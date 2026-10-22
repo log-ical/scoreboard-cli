@@ -1,4 +1,5 @@
 import struct
+import tracemalloc
 import unittest
 import zlib
 
@@ -106,6 +107,29 @@ class PngTest(unittest.TestCase):
     def test_rejects_non_png(self):
         with self.assertRaises(ValueError):
             decode_png(b"GIF89a....")
+
+    def test_size_limits(self):
+        """Logos come from the network and the cache: an empty image (which
+        would divide by zero when scaled), a huge one, or a few KB that
+        inflate to gigabytes mustn't take the app down."""
+        for w, h in ((0, 4), (4, 0), (5000, 5000)):
+            with self.assertRaises(ValueError):
+                decode_png(raw_png(w, h, zlib.compress(b"\0" * 64)))
+        c = zlib.compressobj()
+        bomb = b"".join(c.compress(bytes(1 << 20)) for _ in range(64)) + c.flush()   # 64 MiB of zeros, ~64 KB
+        tracemalloc.start()
+        try:
+            self.assertEqual(decode_png(raw_png(1, 1, bomb))[:2], (1, 1))   # it only needs 5 bytes
+            self.assertLess(tracemalloc.get_traced_memory()[1], 8 << 20)
+        finally:
+            tracemalloc.stop()
+
+
+def raw_png(w, h, idat):
+    def chunk(kind, data):
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0))
+            + chunk(b"IDAT", idat) + chunk(b"IEND", b""))
 
 
 if __name__ == "__main__":

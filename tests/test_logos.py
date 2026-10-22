@@ -5,10 +5,11 @@ import tempfile
 import threading
 import time
 import unittest
+import zlib
 from unittest import mock
 
 from tests.helpers import ROOT  # noqa: F401  (sets sys.path)
-from tests.test_png import encode_rgba
+from tests.test_png import encode_rgba, raw_png
 from scoreboard import logos
 from scoreboard.model import Team
 
@@ -23,7 +24,7 @@ def logo_png(rgb=RED):
     return encode_rgba(rows)
 
 
-def wait_for(cond, timeout=2.0):
+def wait_for(cond, timeout=10.0):   # generous: it returns as soon as cond holds, and CI can be slow
     end = time.monotonic() + timeout
     while not cond():
         if time.monotonic() > end:
@@ -133,6 +134,16 @@ class LogoStoreTest(unittest.TestCase):
         self.assertIsNone(self.store.grid("u", 3, 4))
         self.assertTrue(wait_for(lambda: self.store.grid("u", 3, 4) is not None))
         self.assertEqual(self.fetch.call_count, 1)
+        with open(logos.cache_path("u"), "rb") as f:
+            self.assertEqual(f.read(), logo_png())
+
+    def test_empty_image_on_disk_is_downloaded_again(self):
+        """It used to decode, stay cached, and crash every game of that team."""
+        self.on_disk("u", raw_png(0, 4, zlib.compress(b"\0" * 4)))   # four empty rows: a valid PNG once
+        self.fetch.side_effect = None
+        self.fetch.return_value = logo_png()
+        self.assertIsNone(self.store.grid("u", 3, 4))
+        self.assertTrue(wait_for(lambda: self.store.grid("u", 3, 4) is not None))
         with open(logos.cache_path("u"), "rb") as f:
             self.assertEqual(f.read(), logo_png())
 

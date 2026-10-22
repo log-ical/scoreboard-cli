@@ -4,6 +4,7 @@ import threading
 import time
 import unittest
 import urllib.error
+import urllib.request
 import zlib
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -72,7 +73,7 @@ class Handler(BaseHTTPRequestHandler):
             self.close_connection = True   # hang up without a response
         elif path == "/silent":
             if getattr(self, "answered", False):
-                time.sleep(0.5)       # gone quiet on this connection, as after a network change
+                time.sleep(1.5)       # gone quiet on this connection, as after a network change
                 self.close_connection = True
             else:
                 self.answered = True
@@ -84,6 +85,29 @@ class Handler(BaseHTTPRequestHandler):
         elif path == "/echo":
             time.sleep(0.01)
             self.send(body=query.encode())
+        elif path == "/age":
+            self.send(Age=query, Cache_Control="max-age=19")
+        elif path == "/big":
+            self.send(body=b"x" * int(query))
+        elif path == "/endless":
+            self.send_response(200)   # no length: the body runs until the connection closes
+            self.send_header("Connection", "close")
+            self.end_headers()
+            for _ in range(int(query)):
+                self.wfile.write(b"x" * 65536)
+        elif path == "/bomb":
+            self.send(body=gzip.compress(b"\0" * int(query)), Content_Encoding="gzip")
+        elif path == "/hint":
+            # An interim response, then (in its own packet) the real one.
+            self.wfile.write(b"HTTP/1.1 103 Early Hints\r\nLink: </x.css>\r\n\r\n")
+            self.wfile.flush()
+            time.sleep(0.05)
+            self.send(body=b'"hinted"')
+        elif path == "/controls":
+            # As ESPN writes some plays, plus what a hostile feed could add:
+            # a window title, a lone surrogate and a bidi override.
+            self.send(body=br'{"text": "bad pass\nturnover", "items": [{"name": "A\u001b]0;x\u0007B"},'
+                           br' "\ud800C", "D\u202eE", "ok  as is"]}')
         else:
             self.send(500, b"?")
 
@@ -196,8 +220,8 @@ class FetchTest(unittest.TestCase):
         # Both pooled connections have gone quiet: one timeout, then a fresh
         # connection, not a timeout for every dead connection in the pool.
         t = time.monotonic()
-        self.assertEqual(net.fetch(self.base + "/silent", timeout=0.2), BODY)
-        self.assertLess(time.monotonic() - t, 0.4)
+        self.assertEqual(net.fetch(self.base + "/silent", timeout=0.5), BODY)
+        self.assertLess(time.monotonic() - t, 0.95)   # two timeouts would be 1 s: room for a busy CPU
         self.assertEqual(self.idle(), 1)
 
     def test_timeout(self):
@@ -230,6 +254,71 @@ class FetchTest(unittest.TestCase):
         self.assertEqual(results, {(i, j): b"%d-%d" % (i, j) for i in range(8) for j in range(10)})
         self.assertLessEqual(self.idle(), net.MAX_IDLE)
 
+    def test_bad_age_headers_are_ignored(self):
+        self.assertEqual(net.fetch_json_timed(self.base + "/age?12")[1:], (12.0, 19))
+        for bad in ("nan", "-inf", "inf", "-30", "1e400", "1_000", "7.5", ""):
+            self.assertIsNone(net.fetch_json_timed(self.base + "/age?" + bad)[1], bad)
+
+    def test_responses_are_capped(self):
+        saved = net.MAX_BODY, net.MAX_DECODED
+        net.MAX_BODY, net.MAX_DECODED = 1 << 16, 1 << 20
+        try:
+            self.assertEqual(len(net.fetch(self.base + "/big?65536")), 65536)
+            with self.assertRaises(ValueError):
+                net.fetch(self.base + "/big?65537")
+            self.assertEqual(self.idle(), 0)   # cut off mid-body: that connection isn't reused
+            for path in ("/endless?64", "/bomb?%d" % (4 << 20)):   # the bomb is ~4 KB on the wire
+                with self.assertRaises(ValueError, msg=path):
+                    net.fetch(self.base + path)
+        finally:
+            net.MAX_BODY, net.MAX_DECODED = saved
+
+    def test_interim_response_does_not_shift_later_ones(self):
+        with self.assertRaises(urllib.error.HTTPError) as cm:
+            net.fetch(self.base + "/hint")
+        cm.exception.close()
+        self.assertEqual(cm.exception.code, 103)
+        time.sleep(0.1)   # the real response has arrived on that connection by now
+        self.assertEqual(net.fetch(self.base + "/echo?mine"), b"mine")
+
+    def test_unreachable_route_on_reused_connection_retried(self):
+        net.fetch(self.base + "/plain")
+        before = self.connections()
+        (_, conn), = net._pool[("http", self.base[7:])]
+
+        class Unreachable:   # the socket after a network change: its route is gone
+            def __init__(self, sock):
+                self.sock = sock
+
+            def __getattr__(self, name):
+                return getattr(self.sock, name)
+
+            def sendall(self, data):
+                raise OSError(113, "No route to host")
+        conn.sock = Unreachable(conn.sock)
+        self.assertEqual(net.fetch(self.base + "/plain"), BODY)
+        self.assertEqual(self.connections(), before + 1)
+
+    def test_idle_connections_expire_for_every_host(self):
+        class Conn:
+            closed = False
+
+            def close(self):
+                self.closed = True
+        old, fresh = Conn(), Conn()
+        with net._lock:
+            net._pool[("http", "unused.example")] = [(time.time() - net.IDLE_SECS - 1, old)]
+        net._checkin(("http", "other.example"), fresh)
+        self.assertTrue(old.closed)
+        self.assertFalse(fresh.closed)
+        self.assertNotIn(old, [c for idle in net._pool.values() for _, c in idle])
+
+    def test_json_strings_are_made_printable(self):
+        """Feed text goes on screen: no newlines, escapes or surrogates survive."""
+        expect = {"text": "bad pass turnover", "items": [{"name": "A]0;xB"}, "C", "DE", "ok  as is"]}
+        self.assertEqual(net.fetch_json(self.base + "/controls"), expect)
+        self.assertEqual(net.fetch_json_timed(self.base + "/controls")[0], expect)
+
     def test_proxied_uses_urllib(self):
         net.PROXIED = True
         self.assertEqual(net.fetch(self.base + "/gzip"), BODY)
@@ -259,6 +348,53 @@ class UpgradeTest(unittest.TestCase):
             net._get = saved
         self.assertEqual(seen, [("https", "sports.core.api.espn.com", "/v2/plays/1?lang=en&region=us"),
                                 ("http", "example.com", "/x")])
+
+    def test_upgraded_through_a_proxy_too(self):
+        """With a proxy, urllib fetches: ESPN's http links must still go out as https."""
+        seen = []
+
+        def open_(req, timeout):
+            seen.append(req.full_url)
+            raise OSError("stop here")
+        saved = net.PROXIED, net._opener.open
+        net.PROXIED, net._opener.open = True, open_
+        try:
+            with self.assertRaises(OSError):
+                net.fetch("http://sports.core.api.espn.com/v2/plays/1")
+        finally:
+            net.PROXIED, net._opener.open = saved
+        self.assertEqual(seen, ["https://sports.core.api.espn.com/v2/plays/1"])
+
+    def test_no_redirect_from_https_to_http(self):
+        class Moved:
+            status, reason = 302, "Found"
+            headers = http.client.HTTPMessage()
+        Moved.headers["Location"] = "http://elsewhere.example/doc"
+
+        class Plain:   # what the http URL would answer: someone else's document
+            status, reason, headers = 200, "OK", http.client.HTTPMessage()
+
+        def get(scheme, host, path, timeout):
+            return (Moved(), b"") if scheme == "https" else (Plain(), b"{}")
+        saved, net._get = net._get, get
+        try:
+            with self.assertRaises(urllib.error.HTTPError) as cm:
+                net.fetch("https://site.example/x")
+            cm.exception.close()
+            self.assertIn("refused", cm.exception.reason)
+        finally:
+            net._get = saved
+
+    def test_proxy_redirects_follow_the_same_rules(self):
+        handler = net._Redirects()
+        req = urllib.request.Request("https://site.example/x")
+        for to in ("http://elsewhere.example/doc", "ftp://elsewhere.example/doc"):
+            with self.assertRaises(urllib.error.HTTPError, msg=to) as cm:
+                handler.redirect_request(req, None, 302, "Found", {}, to)
+            cm.exception.close()
+        new = handler.redirect_request(urllib.request.Request("http://site.example/x"), None, 302, "Found", {},
+                                       "http://sports.core.api.espn.com/v2/x")
+        self.assertEqual(new.full_url, "https://sports.core.api.espn.com/v2/x")
 
 
 if __name__ == "__main__":

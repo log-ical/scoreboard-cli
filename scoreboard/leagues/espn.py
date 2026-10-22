@@ -14,11 +14,10 @@ import datetime
 import re
 import threading
 import time
-from collections import namedtuple
 from functools import partial
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
-from ..model import Game, Team, ordinal, parse_utc
+from ..model import Event, Game, Team, ordinal, parse_utc, text
 from ..net import fetch_json, fetch_json_timed
 
 SITE = "https://site.api.espn.com/apis/site/v2/sports/{sport}/{league}/scoreboard"
@@ -40,7 +39,8 @@ def _hex(s):
 def _logo(url):
     # The scoreboard links a small "scoreboard" variant; use the full logo.
     path = urlparse(url).path.replace("/scoreboard/", "/") if url else ""
-    return LOGO.format(path=path) if path else ""
+    # Quoted, so a path can't add its own &h=&w= (the combiner takes the first).
+    return LOGO.format(path=quote(path)) if path else ""
 
 
 def _team(c):
@@ -49,21 +49,17 @@ def _team(c):
         score = int(float(c.get("score") or 0))
     except (TypeError, ValueError):
         score = 0
+    abbrev = text(t.get("abbreviation")) or "?"
     return Team(
-        abbrev=t.get("abbreviation", "?"),
-        name=t.get("displayName", t.get("abbreviation", "")),
+        abbrev=abbrev,
+        name=text(t.get("displayName")) or abbrev,
         score=score,
         id=str(t.get("id", "")),
-        logo_url=_logo(t.get("logo", "")),
-        record=next((r.get("summary", "") for r in c.get("records") or [] if r.get("type") == "total"), ""),
+        logo_url=_logo(text(t.get("logo"))),
+        record=next((text(r.get("summary")) for r in c.get("records") or [] if r.get("type") == "total"), ""),
         color=_hex(t.get("color")),
         alt_color=_hex(t.get("alternateColor")),
     )
-
-
-# A play as the NBA play-by-play views see it: game seconds elapsed, the
-# score after it, and for a field-goal try (x, y, side, made) in feet.
-Detail = namedtuple("Detail", "seq elapsed away home shot")
 
 
 def _ref_id(ref):
@@ -114,6 +110,19 @@ def field_position(spot, g):
     return side, ball, first
 
 
+def _before(val, play):
+    """True if a status (period, clock) is a copy from before `play`: still in
+    an earlier period, or with more time on the clock than the play's (an NBA
+    play's clock is when it happened, an NFL play's at its snap; either way
+    the clock can only be lower after it)."""
+    if play is None or val[1] is None:
+        return False
+    pclock, period = (play.get("clock") or {}).get("value"), (play.get("period") or {}).get("number")
+    if not isinstance(pclock, (int, float)) or not isinstance(period, int):
+        return False
+    return val[0] < period or (val[0] == period and val[1] > pclock + 0.5)
+
+
 def _eastern_day(events):
     """The US Eastern date of the first game: what ESPN's `dates` takes.
     Games start between ~9:30 and 23:00 Eastern, so six hours back from UTC
@@ -133,7 +142,7 @@ class EspnLeague:
     stop_words = ()
     slate_days = 1         # days in the game list: the scoreboard's day and the ones after it
     ot_secs = 10 * 60
-    track_plays = False    # the play-by-play view needs every play (NBA's lead tracker, shot chart)
+    track_plays = False    # the play-by-play view needs every play (to step through, the NBA's charts)
 
     def __init__(self):
         self.later = {}    # "YYYYMMDD" -> (fetched at, events) for the days after the scoreboard's
@@ -172,9 +181,9 @@ class EspnLeague:
                 g.break_label = "END OF " + g.period_label
                 g.break_short = "END " + g.short_period
             elif name != "STATUS_IN_PROGRESS":
-                g.break_label = g.break_short = (stype.get("description") or "").upper()
+                g.break_label = g.break_short = text(stype.get("description")).upper()
         elif g.state == "final":
-            g.final_label = (stype.get("shortDetail") or "Final").upper()
+            g.final_label = (text(stype.get("shortDetail")) or "Final").upper()
         else:
             g.clock_secs = self.period_secs
 
@@ -190,7 +199,7 @@ class EspnLeague:
             away=_team(sides["away"]),
             home=_team(sides["home"]),
             start_utc=e.get("date", ""),
-            venue=(c.get("venue") or {}).get("fullName", ""),
+            venue=text((c.get("venue") or {}).get("fullName")),
             ref={"id": str(e["id"])},
         )
         self.apply_status(g, e.get("status") or {})
@@ -237,15 +246,16 @@ class EspnLeague:
             return []
         dates = [(first + datetime.timedelta(days=n)).strftime("%Y%m%d") for n in range(1, self.slate_days)]
         now = time.time()
-        due = [d for d in dates if now - self.later.get(d, (0.0, None))[0] > SLATE_REFRESH]
+        later = dict(self.later)   # a copy: list loads for two screens can overlap
+        due = [d for d in dates if now - later.get(d, (0.0, None))[0] > SLATE_REFRESH]
 
         for d in due:
             try:
-                self.later[d] = (now, fetch_json(url + "?dates=" + d).get("events", []))
+                later[d] = (now, fetch_json(url + "?dates=" + d).get("events", []))
             except Exception:
                 pass
-        self.later = {d: v for d, v in self.later.items() if d in dates}
-        return [e for d in dates for e in self.later.get(d, (0.0, []))[1]]
+        self.later = later = {d: v for d, v in later.items() if d in dates}
+        return [e for d in dates for e in later.get(d, (0.0, []))[1]]
 
     def open(self, game):
         return Poller(self, game)
@@ -295,7 +305,7 @@ class NBA(EspnLeague):
             if g.state == "live" and bonus and bonus != "NONE":
                 team.tags.append("BONUS")
         if play:
-            g.last_play = "Last play: " + (play.get("text") or "")
+            g.last_play = "Last play: " + text(play.get("text"))
 
     def score_alert(self, points):
         return None        # baskets are too frequent to flash
@@ -307,6 +317,7 @@ class NFL(EspnLeague):
     period_secs = 15 * 60
     poll_every = 5
     clock_cap = 50         # 40 s play clock plus the play itself
+    track_plays = True     # the play-by-play view steps through them
     stop_words = ("incompletion", "timeout", "two-minute", "end period", "end of",
                   "touchdown", "field goal", "extra point", "two-point", "safety",
                   "penalty", "kickoff", "punt", "coin toss", "interception",
@@ -327,7 +338,7 @@ class NFL(EspnLeague):
                 team.stats.append("TIMEOUTS %s" % to)
         if not play:
             return
-        g.last_play = "Last play: " + (play.get("text") or "")
+        g.last_play = "Last play: " + text(play.get("text"))
         if g.state != "live" or g.break_label:
             return
         end = play.get("end") or {}
@@ -338,7 +349,7 @@ class NFL(EspnLeague):
                 if situation.get("isRedZone"):
                     team.tags.append("RED ZONE")
         if (end.get("down") or 0) > 0 and end.get("downDistanceText"):
-            g.note = end["downDistanceText"]
+            g.note = text(end["downDistanceText"])
         g.ball = field_position(end, g)   # where the next snap is
 
     def score_alert(self, points):
@@ -355,11 +366,11 @@ class Poller:
         self.core = CORE.format(sport=league.sport, league=league.league, id=game.ref["id"])
         self.play_ref, self.play = None, None
         self.status_val, self.status_seen = None, 0.0
-        self.play_status_val = None
+        self.play_status_val = None   # the first status after the last play (from after it)
         self.want_plays = False     # set by the game view while the play list is open
         self.want_live = False      # ... and while the play-by-play view is on
         self.plays = {}             # seq -> text
-        self.details = {}           # seq -> Detail, for the play-by-play view (track_plays)
+        self.details = {}           # seq -> Event, for the play-by-play view (track_plays)
         self.backfilled = False
         self.plays_fetched, self.plays_ref = 0.0, False
         # Pages of the API's play list loaded so far (page 1 is the opening tip).
@@ -376,19 +387,27 @@ class Poller:
         return seq, "%-3s %5s  %s" % (self.league.labels(period)[1], clock, play.get("text") or "")
 
     def play_detail(self, play, seq):
-        """What the NBA play-by-play views need from a play."""
+        """What the play-by-play views need from a play: an Event."""
         L, period = self.league, (play.get("period") or {}).get("number") or 1
-        clock = (play.get("clock") or {}).get("value") or 0
+        clock = play.get("clock") or {}
         team = _ref_id(play.get("team"))
         side = "away" if team == self.base.away.id else "home" if team == self.base.home.id else None
         shot, xy = None, play.get("coordinate") or {}
         x, y = xy.get("x"), xy.get("y")
         # Free throws carry junk coordinates; real ones are feet on a half court.
-        if play.get("shootingPlay") and side and isinstance(x, (int, float)) and isinstance(y, (int, float)) \
-                and 0 <= x <= 50 and 0 <= y <= 47:
+        spot = (x, y) if isinstance(x, (int, float)) and isinstance(y, (int, float)) \
+            and 0 <= x <= 50 and 0 <= y <= 47 else None
+        if play.get("shootingPlay") and side and spot:
             shot = (x, y, side, bool(play.get("scoringPlay")))
-        return Detail(seq, L.elapsed(period, clock), int(play.get("awayScore") or 0),
-                      int(play.get("homeScore") or 0), shot)
+        end = play.get("end") or {}
+        return Event(seq, L.elapsed(period, clock.get("value") or 0), int(play.get("awayScore") or 0),
+                     int(play.get("homeScore") or 0), shot, period=period,
+                     when="%s %s" % (L.labels(period)[1], text(clock.get("displayValue"))), side=side,
+                     kind=text((play.get("type") or {}).get("text")), text=text(play.get("text")), xy=spot,
+                     start=field_position(play.get("start") or {}, self.base), end=field_position(end, self.base),
+                     points=play.get("scoreValue") if play.get("scoringPlay") else 0,
+                     yards=play.get("statYardage") if isinstance(play.get("statYardage"), int) else None,
+                     after=text(end.get("downDistanceText")) if (end.get("down") or 0) > 0 else "")
 
     def _record(self, play):
         """Keep a play for the play list (and the play-by-play view); its (seq, text)."""
@@ -403,8 +422,8 @@ class Poller:
         return [e for e in map(self._record, page.get("items", [])) if e]
 
     def backfill(self):
-        """Every play so far, once, for the lead tracker: a whole NBA game is
-        one ~40 KB request. After it the play list has everything, too."""
+        """Every play so far, once, for the play-by-play view: a whole game is
+        one request (~40 KB for the NBA). After it the play list has everything, too."""
         page = fetch_json(self.core + "/plays?limit=1000")
         for p in page.get("items", []):
             self._record(p)
@@ -415,7 +434,7 @@ class Poller:
             self.plays_fetched, self.plays_ref = time.time(), self.play_ref
 
     def play_details(self):
-        """[Detail] in play order, a copy for the game view."""
+        """[Event] in play order, a copy for the game view."""
         return [self.details[seq] for seq in sorted(self.details)]
 
     def fetch_plays(self):
@@ -497,6 +516,13 @@ class Poller:
             except Exception:
                 self.plays_fetched = now   # retry after PLAY_REFRESH
 
+        # Dated when it all came in, not when the status copy was made: that's
+        # unknown (ESPN's max-age counts down to the copy's expiry), and the
+        # play and its score are often fresher than the status. A delayed view
+        # must not show a play before its time. The guess is for the clock.
+        arrived = time.time()
+        clock_t = now - age     # about when the status's clock was read
+
         g = copy.deepcopy(self.base)
         g.away.stats, g.away.tags, g.home.stats, g.home.tags = [], [], [], []
         L.apply_status(g, status)
@@ -505,16 +531,18 @@ class Poller:
             g.away.score = int(play["awayScore"])
             g.home.score = int(play["homeScore"])
 
-        data_t = now - age
         val = (g.period, g.clock_secs)
         if val != self.status_val:
-            self.status_val, self.status_seen = val, data_t
-        if self.play_status_val is None:
+            self.status_val, self.status_seen = val, clock_t
+        if self.play_status_val is None and not _before(val, play):
             self.play_status_val = val
 
         if g.state == "live" and not g.break_label and g.clock_secs is not None:
-            # The clock moved since the last play arrived: it is running.
-            moved = val[0] == self.play_status_val[0] and val[1] < self.play_status_val[1]
+            # The clock moved since the last play arrived: it is running. Not
+            # counting status copies from before the play, which can come with
+            # it: the next, fresh one would look like the clock moved.
+            base = self.play_status_val
+            moved = base is not None and val[0] == base[0] and val[1] < base[1]
             g.clock_running = moved or (play is not None and not L.stops_clock(play, g.clock_secs, g.period))
             # Anchor at the play's wallclock when the status shows the play's
             # clock; otherwise at when we first saw this status value.
@@ -524,9 +552,9 @@ class Poller:
                 wall = parse_utc(play.get("wallclock"))
                 same_period = (play.get("period") or {}).get("number") == g.period
                 if wall and same_period and pclock is not None and abs(pclock - g.clock_secs) < 1:
-                    g.clock_anchor = min(wall, data_t)
+                    g.clock_anchor = min(wall, clock_t)
             g.clock_cap = L.clock_cap
         L.decorate(g, situation, play)
         entry = self.play_entry(play) if play else None
         g.play_seq = entry and entry[0]
-        return g, data_t, L.poll_every
+        return g, arrived, L.poll_every

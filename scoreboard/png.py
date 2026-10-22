@@ -7,6 +7,7 @@ from operator import itemgetter
 
 _A = itemgetter(3)
 _OPAQUE = bytes(1 if v > 40 else 0 for v in range(256))   # alpha -> kept by crop
+MAX_SIDE = 1024   # pixels; logos are 200x200 (500 unscaled), and each pixel costs ~100 bytes decoded
 
 
 def decode_png(data):
@@ -29,9 +30,12 @@ def decode_png(data):
             break
     if depth != 8 or interlace:
         raise ValueError("unsupported PNG format")
+    if not (0 < w <= MAX_SIDE and 0 < h <= MAX_SIDE):   # an empty image would divide by zero later
+        raise ValueError("unsupported PNG size %dx%d" % (w, h))
     channels = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}[color]
-    raw = zlib.decompress(b"".join(idat))
     stride = w * channels
+    # Inflate no more than the image needs: a few KB can inflate to gigabytes.
+    raw = zlib.decompressobj().decompress(b"".join(idat), h * (stride + 1))
     if len(raw) < h * (stride + 1):
         raise ValueError("truncated PNG")
     prev = bytes(stride)

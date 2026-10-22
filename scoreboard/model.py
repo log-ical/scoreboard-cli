@@ -2,7 +2,19 @@
 
 import calendar
 import time
+from collections import namedtuple
 from dataclasses import dataclass, field
+
+# A play or event as the play-by-play views see it, the game's in order:
+# seq (its order, and what a delayed view cuts at); the NBA's game seconds
+# elapsed and score after it, and for a field-goal try (x, y, side, made) in
+# feet; its period and "Q3 4:12"; the team ("away", "home" or None), the
+# league's kind of event and what happened; where (NHL: rink feet, home end
+# on the right; NBA: court feet, the basket at the top), or None; and for
+# the NFL the ball at the snap and after the play (as field_position gives
+# them), the points it scored, the yards it gained, and the down after it.
+Event = namedtuple("Event", "seq elapsed away home shot period when side kind text xy start end points yards"
+                            " after", defaults=(None,) * 11)
 
 
 @dataclass
@@ -40,16 +52,20 @@ class Game:
     final_label: str = "FINAL"     # "FINAL", "FINAL/OT", "FINAL/SO"
     last_play: str = ""
     plays: list = field(default_factory=list)   # [(seq, text)], newest first; seq is None for NHL
-    play_seq: int = None           # sequence number of the play behind last_play (ESPN)
+    # The last play or event this snapshot may show (ESPN: the one behind
+    # last_play; NHL: of the play-by-play's, while that view is on).
+    play_seq: int = None
     # For the play-by-play view. NFL: (side with the ball, "away" or "home";
-    # the ball and the first-down line, or None, in yards from the away goal
-    # line). NHL: this period's shots [(x, y, side, goal)] and the latest
-    # event (text, x, side), in rink feet with the home end on the right.
+    # the ball and the first-down line, or None, in yards from the away goal line).
     ball: tuple = None
-    rink: list = field(default_factory=list)
-    rink_last: tuple = None
     note: str = ""                 # extra live line, e.g. NFL down & distance
     ref: dict = field(default_factory=dict)   # league-specific ids for polling
+
+
+def text(value):
+    """A feed value as text: "" for null, str() of anything that isn't a
+    string, so a changed API can't crash the drawing with a number or null."""
+    return "" if value is None else value if isinstance(value, str) else str(value)
 
 
 def parse_utc(s):
@@ -111,6 +127,8 @@ def headline(game):
 
 def list_status(game, hide=False, h24=False):
     if game.state == "live":
+        if hide:   # any period, break or clock would show which games went to overtime
+            return "LIVE"
         if game.break_short:
             return game.break_short
         clock = fmt_clock(game.clock_secs) if game.clock_secs is not None else ""

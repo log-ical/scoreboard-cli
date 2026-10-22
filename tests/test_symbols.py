@@ -9,7 +9,7 @@ from unittest import mock
 from tests.helpers import ROOT
 from tests.test_render import FakeTerminal
 from scoreboard import live, settings as cfg, term
-from scoreboard.model import Game, Team
+from scoreboard.model import Event, Game, Team
 from scoreboard.term import RESET, Colors, visible_len
 
 plain = lambda s: re.sub(r"\x1b\[[0-9;]*m", "", s)
@@ -66,12 +66,14 @@ class SymbolsTest(unittest.TestCase):
         self.assertEqual(term.translate("● ◦"), "● ◦")
 
     def test_markers_tell_shots_from_goals(self):
-        g = Game("nhl", "1", "live", Team("ANA", "a"), Team("NYI", "b"),
-                 rink=[(80, 0, "away", False), (-80, 0, "home", True)], rink_last=("NYI GOAL", -80, "home"))
+        g = Game("nhl", "1", "live", Team("ANA", "a"), Team("NYI", "b"))
+        shot = Event(1, None, None, None, None, period=1, when="1st 1:00", side="away", kind="shot-on-goal", text="",
+                     xy=(80, 0))
+        events = [shot, shot._replace(seq=2, side="home", kind="goal", xy=(-80, 0))]
         tints = ((0, 80, 200), (0, 120, 60))
         for mode, shot, goal in (("full", "◦", "●"), ("console", "+", "@"), ("ascii", "+", "@")):
             term.set_symbols(mode)
-            text = "\n".join(plain(l) for l in live.view("nhl", "rink", g, [], 60, Colors("16"), tints))
+            text = "\n".join(plain(l) for l in live.view("nhl", "rink", g, events, 60, Colors("16"), tints))
             self.assertIn("%s shot %s goal" % (shot, goal), text)
         term.set_symbols("console")
         self.assertEqual((live.marks()["made"], live.marks()["missed"]), ("O", "x"))
