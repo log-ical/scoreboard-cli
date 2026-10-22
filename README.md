@@ -9,6 +9,18 @@ Live NHL, NBA and NFL scores in the terminal. Python 3 standard library only.
     scoreboard --symbols console   # force a symbol set: full | console | ascii
     nhl-live                # old name, same as `scoreboard nhl`
 
+## Screenshots
+
+| Game list: the week by day, earlier days loaded with `↑` | NHL: the play-by-play shot map |
+|---|---|
+| ![Game list](images/game-list.png) | ![NHL game with the shot map](images/nhl-shot-map.png) |
+| **NFL: the yard bar, with the first-down line** | **NBA: horizontal layout with the lead tracker** |
+| ![NFL game with the yard bar](images/nfl-yard-bar.png) | ![NBA game with the lead tracker](images/nba-lead-tracker.png) |
+
+The play list (`p`), under the play-by-play view:
+
+![NBA game with the play list open](images/play-list.png)
+
 ## Keys
 
 | Screen    | Keys |
