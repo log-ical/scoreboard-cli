@@ -363,6 +363,22 @@ def logo_width(logo_rows, aspect):
     return round(logo_rows * 2 / aspect)
 
 
+def longest_alert(league):
+    """The longest text a score can flash by a name (1-8 points cover every
+    league's), so the layout has room for it before the first score."""
+    if not settings["score_alert"]:
+        return None
+    return max((league.score_alert(p) or "" for p in range(1, 9)), key=len) or None
+
+
+def laid_out_width(infos, seen, key):
+    """The width to lay the teams out by: the widest their info has been at
+    this size and scale (seen, by key), so the logos don't move as a name
+    flashes, a score grows or a power play's tag comes and goes."""
+    seen[key] = max(seen.get(key, 0), max(visible_len(s) for inf in infos for s in inf))
+    return seen[key]
+
+
 def logo_box(logo_rows, logos, team, colors, tint, aspect):
     """Logo centered both ways in a box at least logo_rows tall, square on screen."""
     box_w = logo_width(logo_rows, aspect)
@@ -403,31 +419,36 @@ def fit(line, width):
     return " " * pad + line + RESET + " " * max(0, width - n - pad)
 
 
-def side_by_side(g, logos, colors, tints, flashes, middle, tail, cols, height, aspect, panel=None):
+def side_by_side(g, logos, colors, tints, flashes, middle, tail, cols, height, aspect, panel=None, alert=None,
+                 seen=None):
     """Horizontal layout: away | clock | home, then `tail` (the last play).
 
     With `panel` (a function of width and height giving the play list), the
     list replaces the tail and fills the space between the teams under the
     clock; the teams stay exactly where they are without it. None if the
-    window is too narrow.
+    window is too narrow. The teams are laid out as if both names flashed
+    `alert` (longest_alert), at the widest they've been (`seen`, see
+    laid_out_width), so the logos stay put.
     """
+    seen = {} if seen is None else seen
     mid_w = max(visible_len(m) for m in middle)
     col_w = (cols - mid_w - 8) // 2
     for scale in (2, 1):
-        infos = [team_info(t, colors, tint, scale, flash, False)
-                 for t, tint, flash in zip((g.away, g.home), tints, flashes)]
-        info_w = max(visible_len(s) for inf in infos for s in inf)
-        if info_w <= col_w and (scale == 1 or height - len(tail) - len(infos[0]) >= 15):
+        sized = [team_info(t, colors, tint, scale, alert, False) for t, tint in zip((g.away, g.home), tints)]
+        info_w = laid_out_width(sized, seen, ("horizontal", cols, height, scale))
+        if info_w <= col_w and (scale == 1 or height - len(tail) - len(sized[0]) >= 15):
             break
     else:
         return None
+    infos = [team_info(t, colors, tint, scale, flash, False)
+             for t, tint, flash in zip((g.away, g.home), tints, flashes)]
     max_logo_rows = height - len(tail) - len(infos[0]) - 1
     logo_rows = int(min(max_logo_rows, col_w * aspect / 2, 32) * LOGO_SCALE[settings["logo_size"]])
     if logo_rows < 4:
         logo_rows = 0
-    columns = [logo_box(logo_rows, logos, team, colors, tint, aspect) + [""] + info
-               for team, tint, info in zip((g.away, g.home), tints, infos)]
-    team_w = max(visible_len(l) for c in columns for l in c)
+    boxes = [logo_box(logo_rows, logos, team, colors, tint, aspect) for team, tint in zip((g.away, g.home), tints)]
+    columns = [box + [""] + info for box, info in zip(boxes, infos)]
+    team_w = max([info_w] + [visible_len(l) for box in boxes for l in box])
     outer = (col_w - team_w) // 2
     between = 2 * (col_w - team_w - outer) + mid_w + 8   # the gap between the teams
     rows = max(len(columns[0]), len(columns[1]), len(middle))
@@ -677,6 +698,8 @@ def game_view(term, league, feed, logos, colors, menu):
     paged_at = None       # how many plays were loaded when the list last paged back by itself
     details, live_on = [], feed.want_live   # the play-by-play view's events; whether it's on
     pinned = None         # the view's event when gone back in time with ← (its seq); None: the latest
+    seen = {}             # the teams' widest info at each size (laid_out_width); options may change it
+    noted = False         # a situation note has shown (NFL down & distance): its row stays, so nothing moves
 
     while True:
         now = time.time()
@@ -707,6 +730,7 @@ def game_view(term, league, feed, logos, colors, menu):
 
         cols, rows = term.size()
         if menu.open:
+            seen.clear()
             term.draw(menu.render(cols, rows))
             key = term.read_key(0.25)
             if key == "\x0c":   # Ctrl-L repaints here too
@@ -772,11 +796,16 @@ def game_view(term, league, feed, logos, colors, menu):
             middle = [BOLD + head + RESET] + gap
             middle += [BOLD + r + RESET for r in big_text(clock_str, mid_scale)]
             middle += gap + [tag]
-            if settings["show_situation"] and g.note:
+            noted = noted or bool(g.note)
+            if settings["show_situation"] and noted:
                 middle.append(BOLD + YELLOW + g.note + RESET)
-            last_play = settings["show_last_play"] and g.last_play and not compact
+            # The last play's row is kept while it's empty (the NHL's last
+            # goal before the first), so the first one doesn't move the teams.
+            keep_last = settings["show_last_play"] and not compact
+            last_play = keep_last and g.last_play
             aspect = term.pixel_aspect()
-            tail = ["", center(DIM + shorten(g.last_play, cols - 2) + RESET, cols)] if last_play else []
+            tail = ["", center(DIM + shorten(g.last_play, cols - 2) + RESET, cols)] if keep_last else []
+            alert_room = longest_alert(league)
             tints = (logos.tint(g.away), logos.tint(g.home))
             panel = live_fn = None
             if live_on:
@@ -840,7 +869,8 @@ def game_view(term, league, feed, logos, colors, menu):
 
             body = None
             if settings["layout"] == "horizontal":
-                body = side_by_side(g, logos, colors, tints, flashes, middle, tail, cols, usable, aspect, panel)
+                body = side_by_side(g, logos, colors, tints, flashes, middle, tail, cols, usable, aspect, panel,
+                                    alert_room, seen)
                 if body:
                     place(lines, body, 1, rows - 1)
 
@@ -876,7 +906,7 @@ def game_view(term, league, feed, logos, colors, menu):
                     middle += [""] + plays_fn(cols - 4, list_rows - 1)
                 elif plays_fn and room > 0:
                     middle.append(DIM + "(the play list needs a taller window)" + RESET)
-                elif last_play and not drawn and room > 0:
+                elif keep_last and not drawn and room > 0:
                     middle.append(DIM + shorten(g.last_play, cols - 2) + RESET)
                 middle = [center(m, cols) for m in middle]
                 if slim:
@@ -889,7 +919,9 @@ def game_view(term, league, feed, logos, colors, menu):
                     scale = 2 if max_logo_rows >= 14 else 1
                     infos = [team_info(t, colors, tint, scale, flash, compact)
                              for t, tint, flash in zip((g.away, g.home), tints, flashes)]
-                    info_w = max(visible_len(s) for inf in infos for s in inf)
+                    sized = [team_info(t, colors, tint, scale, alert_room, compact)
+                             for t, tint in zip((g.away, g.home), tints)]
+                    info_w = laid_out_width(sized, seen, ("vertical", cols, rows, scale, compact))
                     width_cap = (cols - 4 - 4 - info_w) * aspect / 2  # rows whose square box fits
                     logo_rows = int(min(max_logo_rows, width_cap, 32) * LOGO_SCALE[settings["logo_size"]])
                     if logo_rows < 4:

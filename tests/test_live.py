@@ -389,6 +389,78 @@ class LayoutTest(unittest.TestCase):
                                     self.assertTrue(score_readable(frames[-1], team), case)
 
 
+class SteadyLogosTest(unittest.TestCase):
+    """A goal (its flash, the score and the NHL's first last-goal line), a
+    power play's tag and the NFL's note coming and going leave the logos
+    where they were, in both layouts."""
+
+    def setUp(self):
+        self.saved = dict(settings), screens.logo_lines
+        settings.update(delay=0, play_by_play=False, live_styles={}, logo_size="small", score_alert=True,
+                        bell=False, show_last_play=True, show_record=True, show_stats=True, show_situation=True)
+        # Each logo drawn as its team's letter, to find it on screen.
+        screens.logo_lines = lambda grid, colors: ["".join(grid[i]) for i in range(0, len(grid), 2)]
+
+    def tearDown(self):
+        settings.clear()
+        settings.update(self.saved[0])
+        screens.logo_lines = self.saved[1]
+
+    def places(self, layout, cols, rows, games):
+        """Each frame's (top, left, width) of the away and home logos."""
+        settings["layout"] = layout
+
+        class Logos(FakeLogos):
+            def grid(self, url, w, h, aspect):
+                return [[url] * w for _ in range(h)]
+
+        class League(FakeLeague):
+            def score_alert(self, points):
+                return "GOAL!"
+
+        class Feed(StaticFeed):
+            def __init__(self):
+                super().__init__(games[0], False)
+                self.waiting[1] = ("plays", [], False)
+                self.later = list(games[1:])
+
+            def updates(self):
+                out, self.waiting = self.waiting, []
+                return out or ([("game", self.later.pop(0), time.time())] if self.later else [])
+
+        class Term(SizedTerm):
+            def read_key(self, timeout):
+                time.sleep(0.05)   # long enough for the flash to blink on and off
+                return super().read_key(timeout)
+        term = Term(cols, rows, [None] * 16)
+        screens.game_view(term, League(None, "nhl"), Feed(), Logos(), COLORS, FakeMenu())
+        out = []
+        for _, frame in term.draws:
+            rows = [plain(r) for r in frame.split("\n")]
+            out.append(tuple(next(((y, r.index(c * 3), r.count(c)) for y, r in enumerate(rows) if c * 3 in r), None)
+                             for c in "AH"))
+        return out
+
+    def game(self, **kw):
+        g = teams_game("nhl", "BUF", "TOR", period=2, period_label="2ND PERIOD", short_period="2nd",
+                       clock_secs=605.0, clock_running=True, venue="Arena", **kw)
+        g.away.name, g.home.name = "Buffalo Sabres", "Toronto Maple Leafs"
+        g.away.logo_url, g.home.logo_url = "A", "H"
+        g.away.record, g.home.record, g.away.stats, g.home.stats = "5-2-1", "4-3-0", ["SOG 21"], ["SOG 19"]
+        return g
+
+    def test_a_goal_and_situations_leave_the_logos_still(self):
+        goal = self.game(last_play="Goal: BUF Tuch (5) 12:01 2nd")
+        goal.away.score = 10   # a digit more, too
+        goal.home.tags = ["POWER PLAY 1:58"]
+        drive, timeout = self.game(note="1st & 10 at BUF 25"), self.game()
+        for layout, cols, rows in (("horizontal", 120, 40), ("vertical", 100, 50)):
+            for games in ([self.game(), goal], [drive, timeout, drive]):
+                places = self.places(layout, cols, rows, games)
+                self.assertIsNotNone(places[0][0], layout)
+                self.assertEqual(set(places), {places[0]}, (layout, games[-1].note))
+
+
 class ScreenTest(unittest.TestCase):
     def setUp(self):
         self.saved = dict(settings), screens.save_settings
