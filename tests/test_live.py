@@ -100,6 +100,19 @@ class NbaTest(unittest.TestCase):
         self.assertNotIn("●", court.split("\n")[5][:8])   # the oldest (x 0-12 ft) are gone
         self.assertIn("shot chart · v", lines[-1])
 
+    def test_latest_play_numbers_the_shots_before_it_on_request(self):
+        g = teams_game("nba", "PHI", "NY")
+        plays = [Event(1, 1, 2, 0, (10, 10, "away", True)), Event(2, 2, 2, 0, (40, 20, "home", False)),
+                 Event(3, 3, 2, 0, None, when="Q1 11:18", side="away", kind="Defensive Rebound",
+                       text="Embiid defensive rebound", xy=(25, 5))]
+        court = lambda earlier: "\n".join(plain(l) for l in live.view("nba", "latest", g, plays, 50, COLORS, TINTS,
+                                                                       espn.NBA(), earlier=earlier)[:-2])
+        self.assertIn("REBOUND", court(False))
+        self.assertNotRegex(court(False), "[12]")
+        rows = court(True).split("\n")
+        self.assertIn("2", next(r for r in rows if "2" in r)[:15])   # the older shot, on the left
+        self.assertIn("1", next(r for r in rows if "1" in r)[30:])   # the newer, on the right
+
     def test_poller_backfills_once_and_skips_free_throw_junk(self):
         shot = dict(fixture("nba_play.json"), sequenceNumber="5", shootingPlay=True, scoringPlay=True,
                     coordinate={"x": 30, "y": 20}, team={"$ref": "http://x/teams/%s" % "AWAY"})
@@ -234,6 +247,9 @@ class NhlTest(unittest.TestCase):
         self.assertIn("HIT", rink)
         self.assertTrue(words.startswith("HIT · ANA ? on ?"))
         self.assertTrue(words.rstrip().endswith("2nd 05:00"))
+        self.assertNotRegex(rink + recent, "[12]")   # the ones before it: only with the play list open
+        lines = [plain(l) for l in live.view("nhl", "latest", g, events, 60, COLORS, TINTS, earlier=True)]
+        rink, recent = "\n".join(lines[:-2]), lines[-1]
         self.assertIn("1 NYI goal · 2 ANA shot", recent)        # the two before it, numbered
         self.assertIn("1", rink)
         self.assertIn("2", rink)
@@ -432,6 +448,38 @@ class ScreenTest(unittest.TestCase):
             self.assertNotIn("shot map", term.draws[-1][1])
             self.assertNotIn("v view", term.draws[-1][1])
             self.assertTrue(wait_for(lambda: not poller.want_live))
+        finally:
+            term.keys.put("q")
+            t.join(1)
+
+    def test_the_play_list_numbers_the_events_before_the_latest(self):
+        events = NhlTest().events()
+        settings["layout"] = "horizontal"   # room for the view and the list at 100x40
+
+        class Poller:
+            want_live = False
+
+            def poll(self):
+                return teams_game("nhl", "ANA", "NYI", play_seq=events[-1].seq), time.time(), 3600
+
+            def play_details(self):
+                return list(events)
+        league = FakeLeague(Poller())
+        league.key = "nhl"
+        term = FakeTerm()
+        t = threading.Thread(target=lambda: screens.game_screen(term, league, None, FakeLogos(), COLORS, FakeMenu()),
+                             daemon=True)
+        t.start()
+        try:
+            # The hit's row of the rink (the scores are 0): the goal (1) and shot (2) before it, numbered.
+            numbered = lambda: re.search(r"1.*◉.*2", plain(term.draws[-1][1])) is not None
+            self.assertTrue(wait_for(lambda: term.shown("latest event · v")))
+            self.assertFalse(numbered())
+            term.keys.put("p")
+            self.assertTrue(wait_for(numbered))
+            self.assertIn("latest event · v", term.draws[-1][1])
+            term.keys.put("p")
+            self.assertTrue(wait_for(lambda: not numbered()))
         finally:
             term.keys.put("q")
             t.join(1)

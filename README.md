@@ -53,8 +53,9 @@ reports one, so tall and wide logos come out the same size.
 The play-by-play view (on in **Options**) draws the latest event where it happened, with what it was:
 
 - **NHL**: shots and the save, goals, hits, faceoffs, takeaways and penalties on the rink, a shot's arrow
-  pointing at the net it went at, and the two events before it numbered.
-- **NBA**: shots, rebounds, fouls and turnovers on a half court, with the score after.
+  pointing at the net it went at; with the play list open (`p`), the two events before it numbered.
+- **NBA**: shots, rebounds, fouls and turnovers on a half court, with the score after; with the play list
+  open, the two shots before it numbered.
 - **NFL**: the play from the snap to where the ball ended up, with the yards and the down after.
 
 `v` switches to the other styles: a period's shot map or a zone strip for the NHL, a lead tracker or a shot

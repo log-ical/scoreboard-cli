@@ -47,12 +47,14 @@ def next_style(league, current):
     return keys[(keys.index(current) + 1) % len(keys)] if current in keys else (keys[0] if keys else None)
 
 
-def view(league, style, g, events, width, colors, tints, rules=None, at=None):
+def view(league, style, g, events, width, colors, tints, rules=None, at=None, earlier=False):
     """The view's lines, at most width wide; [] if it doesn't fit or the league has none.
 
     events: the game's events so far (already cut at the view's last play),
     oldest first; at: the index of the one to show, None for the latest.
-    rules: the league, for its period lengths.
+    rules: the league, for its period lengths. earlier: the NBA and NHL
+    latest views also number the two before the shown one (the game view
+    sets it while the play list is open).
     """
     if league not in STYLES or width < MIN_WIDTH:
         return []
@@ -67,8 +69,10 @@ def view(league, style, g, events, width, colors, tints, rules=None, at=None):
     if league == "nfl":
         return {"latest": nfl_latest, "bar": yard_bar, "field": full_field}[style](*args)
     if league == "nba":
-        return lead_tracker(*args, rules) if style == "lead" else (nba_latest if style == "latest" else shot_chart)(*args)
-    return {"latest": nhl_latest, "rink": shot_map, "zones": zone_strip}[style](*args)
+        if style == "latest":
+            return nba_latest(*args, earlier)
+        return lead_tracker(*args, rules) if style == "lead" else shot_chart(*args)
+    return nhl_latest(*args, earlier) if style == "latest" else {"rink": shot_map, "zones": zone_strip}[style](*args)
 
 
 class Teams:
@@ -396,9 +400,10 @@ def _nba_tag(e):
     return ""
 
 
-def nba_latest(g, upto, w, teams, label, note):
-    """The shown play where it happened on the court, with what it was, the
-    two shots before it (numbered, faded), and the score after it."""
+def nba_latest(g, upto, w, teams, label, note, earlier=False):
+    """The shown play where it happened on the court, with what it was and
+    the score after it; with earlier, the two shots before it too (numbered,
+    faded)."""
     grid, col, row = _court(w, 7, every=4)
     cur = upto[-1] if upto else None
     if cur is None:
@@ -407,7 +412,8 @@ def nba_latest(g, upto, w, teams, label, note):
     free_throw = "free throw" in (cur.kind or "").lower()
     spot = cur.xy or ((25, 14) if free_throw else None)   # free throws' own coordinates are junk
     here = (col(spot[0]), row(spot[1])) if spot and cur.side else None
-    for n, e in enumerate(reversed([e for e in upto[:-1] if e.shot][-2:]), 1):
+    before = [e for e in upto[:-1] if e.shot][-2:] if earlier else []
+    for n, e in enumerate(reversed(before), 1):
         x, y, side, _ = e.shot
         _before(grid, col(x), row(y), str(n), teams.fg[side] + DIM, here)
     if here:
@@ -532,10 +538,10 @@ def zone_strip(g, upto, w, teams, label, note):
                            _caption(w, note, counts, label, n, keep=(counts, n))]
 
 
-def nhl_latest(g, upto, w, teams, label, note):
+def nhl_latest(g, upto, w, teams, label, note, earlier=False):
     """The shown event where it happened, with what it was (a shot's arrow
-    toward the net it went at), and the two before it in its period,
-    numbered and faded."""
+    toward the net it went at); with earlier, the two before it in its
+    period too, numbered and faded, and named in the caption."""
     grid, col, row = _rink(w)
     cur, period, _ = _this_period(g, upto)
     if cur is None:
@@ -543,7 +549,7 @@ def nhl_latest(g, upto, w, teams, label, note):
     m = marks()
     recent = []
     x, y, style = col(cur.xy[0]), row(cur.xy[1]), teams.fg[cur.side] + BOLD
-    for n, e in enumerate(reversed(period[-3:-1]), 1):
+    for n, e in enumerate(reversed(period[-3:-1] if earlier else []), 1):
         _before(grid, col(e.xy[0]), row(e.xy[1]), str(n), teams.fg[e.side] + DIM, (x, y))
         recent.append("%d %s %s" % (n, teams.abbrev[e.side], NHL_NAMES.get(e.kind, e.kind).lower()))
     tag = NHL_TAGS.get(cur.kind, cur.kind.upper())

@@ -786,8 +786,8 @@ def game_view(term, league, feed, logos, colors, menu):
                 if at is None or at == len(events) - 1:
                     pinned, at = None, None   # caught up with the latest (or it's not shown any more)
 
-                def live_fn(width):
-                    return live.view(league.key, style, g, events, width, colors, tints, league, at)
+                def live_fn(width):   # the events before the shown one are numbered only with the play list open
+                    return live.view(league.key, style, g, events, width, colors, tints, league, at, expanded)
             if expanded:
                 if loaded is not None:
                     plays, older = visible_plays(g, loaded[0]), loaded[1]
